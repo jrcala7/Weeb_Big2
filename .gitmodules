@@ -1,3 +1,6 @@
 [submodule "external/big2-stack"]
 	path = external/big2-stack
 	url = https://github.com/Paper-Cranes-Ltd/big2-stack.git
+[submodule "external/assimp"]
+	path = external/assimp
+	url = https://github.com/assimp/assimp.git
