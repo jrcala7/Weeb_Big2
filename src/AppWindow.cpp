@@ -40,6 +40,10 @@ void AppWindow::SetRenderCallback(RenderCallback callback) {
     render_callback_ = std::move(callback);
 }
 
+void AppWindow::SetShutdownCallback(ShutdownCallback callback) {
+    shutdown_callback_ = std::move(callback);
+}
+
 void AppWindow::SetClearColor(std::uint32_t rgba) {
     clear_color_ = rgba;
 }
@@ -60,4 +64,11 @@ void AppWindow::Run() {
     window.SetClearColor(clear_color_);
 
     app.Run();
+
+    // Let the application clean up GPU resources while bgfx is still alive
+    // (the local `app` — and therefore bgfx — is destroyed at the end of
+    // this scope).
+    if (shutdown_callback_) {
+        shutdown_callback_();
+    }
 }

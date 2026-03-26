@@ -1,0 +1,138 @@
+#include "ModelRenderer.h"
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <big2/bgfx/embedded_shader.h>
+#include <generated/shaders/Weeb_Big2/all.h>
+
+#include "Data/Model3D.h"
+#include "Data/Camera.h"
+
+// ---------------------------------------------------------------------------
+// Embedded shaders compiled at build time by bgfx shaderc.
+// ---------------------------------------------------------------------------
+static const bgfx::EmbeddedShader kEmbeddedShaders[] = {
+    BGFX_EMBEDDED_SHADER(vs_model),
+    BGFX_EMBEDDED_SHADER(fs_model),
+    BGFX_EMBEDDED_SHADER_END()
+};
+
+// ---------------------------------------------------------------------------
+ModelRenderer::ModelRenderer() = default;
+
+ModelRenderer::~ModelRenderer() {
+    Shutdown();
+}
+
+bool ModelRenderer::Init() {
+    if (IsInitialized()) {
+        return true;
+    }
+
+    bgfx::RendererType::Enum renderer = bgfx::getRendererType();
+
+    bgfx::ShaderHandle vs = bgfx::createEmbeddedShader(kEmbeddedShaders, renderer, "vs_model");
+    bgfx::ShaderHandle fs = bgfx::createEmbeddedShader(kEmbeddedShaders, renderer, "fs_model");
+    program_ = bgfx::createProgram(vs, fs, true);
+
+    if (!bgfx::isValid(program_)) {
+        return false;
+    }
+
+    u_light_dir_ = bgfx::createUniform("u_light_dir", bgfx::UniformType::Vec4);
+    u_color_     = bgfx::createUniform("u_color",     bgfx::UniformType::Vec4);
+
+    vertex_layout_
+        .begin()
+        .add(bgfx::Attrib::Position,  3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Normal,    3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .end();
+
+    return true;
+}
+
+void ModelRenderer::Shutdown() {
+    if (bgfx::isValid(program_)) {
+        bgfx::destroy(program_);
+        program_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_light_dir_)) {
+        bgfx::destroy(u_light_dir_);
+        u_light_dir_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_color_)) {
+        bgfx::destroy(u_color_);
+        u_color_ = BGFX_INVALID_HANDLE;
+    }
+}
+
+bool ModelRenderer::IsInitialized() const {
+    return bgfx::isValid(program_);
+}
+
+// ---------------------------------------------------------------------------
+void ModelRenderer::Render(bgfx::ViewId view_id,
+                           const Model3D& model,
+                           const Camera& camera) {
+    if (!IsInitialized() || !model.IsLoaded()) {
+        return;
+    }
+
+    // ---- View / Projection --------------------------------------------------
+    const glm::mat4 view = camera.GetViewMatrix();
+    const glm::mat4 proj = camera.GetProjectionMatrix();
+    bgfx::setViewTransform(view_id, glm::value_ptr(view), glm::value_ptr(proj));
+
+    // ---- Model matrix -------------------------------------------------------
+    glm::mat4 mtx = glm::mat4(1.0f);
+    mtx = glm::translate(mtx, model.GetPosition());
+    mtx = glm::rotate(mtx, glm::radians(model.GetRotation().x), glm::vec3(1, 0, 0));
+    mtx = glm::rotate(mtx, glm::radians(model.GetRotation().y), glm::vec3(0, 1, 0));
+    mtx = glm::rotate(mtx, glm::radians(model.GetRotation().z), glm::vec3(0, 0, 1));
+    mtx = glm::scale(mtx, model.GetScale());
+
+    // ---- Uniforms -----------------------------------------------------------
+    glm::vec3 dir = glm::normalize(light_dir_);
+    float light_dir_arr[4] = {dir.x, dir.y, dir.z, 0.0f};
+    bgfx::setUniform(u_light_dir_, light_dir_arr);
+
+    float color_arr[4] = {color_.r, color_.g, color_.b, color_.a};
+    bgfx::setUniform(u_color_, color_arr);
+
+    // ---- Submit each sub-mesh -----------------------------------------------
+    for (const auto& mesh : model.GetMeshes()) {
+        if (mesh.vertices.empty() || mesh.indices.empty()) {
+            continue;
+        }
+
+        bgfx::TransientVertexBuffer tvb;
+        bgfx::TransientIndexBuffer  tib;
+
+        uint32_t num_vertices = static_cast<uint32_t>(mesh.vertices.size());
+        uint32_t num_indices  = static_cast<uint32_t>(mesh.indices.size());
+
+        // Pass true for 32-bit index buffer — indices are stored as uint32_t.
+        if (!bgfx::allocTransientBuffers(&tvb, vertex_layout_, num_vertices, &tib, num_indices, true)) {
+            continue;
+        }
+
+        bx::memCopy(tvb.data, mesh.vertices.data(), num_vertices * sizeof(Model3D::Vertex));
+        bx::memCopy(tib.data, mesh.indices.data(),  num_indices  * sizeof(uint32_t));
+
+        bgfx::setTransform(glm::value_ptr(mtx));
+        bgfx::setVertexBuffer(0, &tvb);
+        bgfx::setIndexBuffer(&tib);
+
+        bgfx::setState(
+            BGFX_STATE_WRITE_RGB
+            | BGFX_STATE_WRITE_A
+            | BGFX_STATE_WRITE_Z
+            | BGFX_STATE_DEPTH_TEST_LESS
+            | BGFX_STATE_CULL_CW
+            | BGFX_STATE_MSAA
+        );
+
+        bgfx::submit(view_id, program_);
+    }
+}

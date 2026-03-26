@@ -16,12 +16,19 @@ public:
     /// @param dt      Delta time in seconds since the last frame.
     using RenderCallback = std::function<void(big2::Window& window, float dt)>;
 
+    /// Callback invoked after the render loop ends but before bgfx is shut down.
+    using ShutdownCallback = std::function<void()>;
+
     /// @param title  Window title.
     /// @param size   Window dimensions in pixels.
     explicit AppWindow(const std::string& title, glm::ivec2 size = {800, 600});
 
     /// Set a per-frame render callback.
     void SetRenderCallback(RenderCallback callback);
+
+    /// Set a callback that runs after the render loop exits but while bgfx is
+    /// still alive.  Use this to destroy GPU resources (programs, uniforms, etc.).
+    void SetShutdownCallback(ShutdownCallback callback);
 
     /// Set the clear color (RGBA, e.g. 0x443355FF).
     void SetClearColor(std::uint32_t rgba);
@@ -34,4 +41,5 @@ private:
     glm::ivec2  size_;
     std::uint32_t clear_color_ = 0x443355FF;
     RenderCallback render_callback_;
+    ShutdownCallback shutdown_callback_;
 };
