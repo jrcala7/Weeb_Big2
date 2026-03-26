@@ -78,6 +78,7 @@ bool ModelRenderer::Init() {
         .add(bgfx::Attrib::Position,  3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::Normal,    3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord1, 1, bgfx::AttribType::Float)
         .end();
 
     return true;
@@ -176,7 +177,7 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
         float shadow_color_arr[4] = {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a};
         bgfx::setUniform(u_shadow_color_, shadow_color_arr);
 
-        float step_arr[4] = {model.GetStep(), model.GetInnerStep(), 0.0f, 0.0f};
+        float step_arr[4] = {model.GetStep(), model.GetInnerStep(), model.GetCurveStep(), 0.0f};
         bgfx::setUniform(u_step_, step_arr);
 
         const glm::vec4& inner_edge_color = model.GetInnerEdgeColor();

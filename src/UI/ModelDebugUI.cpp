@@ -46,6 +46,11 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetInnerStep(inner_step);
         }
 
+        float curve_step = model.GetCurveStep();
+        if (ImGui::DragFloat("Curve Step", &curve_step, 0.01f)) {
+            model.SetCurveStep(curve_step);
+        }
+
         glm::vec4 inner_edge_color = model.GetInnerEdgeColor();
         if (ImGui::ColorEdit4("Inner Edge Color", &inner_edge_color.x)) {
             model.SetInnerEdgeColor(inner_edge_color);

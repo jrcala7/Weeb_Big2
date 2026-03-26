@@ -1,5 +1,5 @@
-$input a_position, a_normal, a_texcoord0
-$output v_normal, v_texcoord0, v_world_pos
+$input a_position, a_normal, a_texcoord0, a_texcoord1
+$output v_normal, v_texcoord0, v_world_pos, v_curvature
 
 #include <bgfx_shader.sh>
 
@@ -11,4 +11,5 @@ void main()
     v_world_pos = world_pos.xyz;
     v_normal    = mul(u_model[0], vec4(a_normal, 0.0)).xyz;
     v_texcoord0 = a_texcoord0;
+    v_curvature = a_texcoord1;
 }
