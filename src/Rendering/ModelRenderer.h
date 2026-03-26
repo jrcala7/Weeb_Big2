@@ -42,6 +42,7 @@ public:
 private:
     bgfx::ProgramHandle program_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_light_dir_ = BGFX_INVALID_HANDLE;
-    bgfx::UniformHandle u_color_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle u_base_color_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle u_shadow_color_ = BGFX_INVALID_HANDLE;
     bgfx::VertexLayout  vertex_layout_;
 };

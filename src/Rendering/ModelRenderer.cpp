@@ -40,8 +40,9 @@ bool ModelRenderer::Init() {
         return false;
     }
 
-    u_light_dir_ = bgfx::createUniform("u_light_dir", bgfx::UniformType::Vec4);
-    u_color_     = bgfx::createUniform("u_color",     bgfx::UniformType::Vec4);
+    u_light_dir_    = bgfx::createUniform("u_light_dir",    bgfx::UniformType::Vec4);
+    u_base_color_   = bgfx::createUniform("u_color",        bgfx::UniformType::Vec4);
+    u_shadow_color_ = bgfx::createUniform("u_shadow_color", bgfx::UniformType::Vec4);
 
     vertex_layout_
         .begin()
@@ -62,9 +63,13 @@ void ModelRenderer::Shutdown() {
         bgfx::destroy(u_light_dir_);
         u_light_dir_ = BGFX_INVALID_HANDLE;
     }
-    if (bgfx::isValid(u_color_)) {
-        bgfx::destroy(u_color_);
-        u_color_ = BGFX_INVALID_HANDLE;
+    if (bgfx::isValid(u_base_color_)) {
+        bgfx::destroy(u_base_color_);
+        u_base_color_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_shadow_color_)) {
+        bgfx::destroy(u_shadow_color_);
+        u_shadow_color_ = BGFX_INVALID_HANDLE;
     }
 }
 
@@ -99,9 +104,13 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
     float light_dir_arr[4] = {dir.x, dir.y, dir.z, 0.0f};
     bgfx::setUniform(u_light_dir_, light_dir_arr);
 
-    const glm::vec4& color = model.GetColor();
-    float color_arr[4] = {color.r, color.g, color.b, color.a};
-    bgfx::setUniform(u_color_, color_arr);
+    const glm::vec4& base_color = model.GetBaseColor();
+    float base_color_arr[4] = {base_color.r, base_color.g, base_color.b, base_color.a};
+    bgfx::setUniform(u_base_color_, base_color_arr);
+
+    const glm::vec4& shadow_color = model.GetShadowColor();
+    float shadow_color_arr[4] = {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a};
+    bgfx::setUniform(u_shadow_color_, shadow_color_arr);
 
     // ---- Submit each sub-mesh -----------------------------------------------
     for (const auto& mesh : model.GetMeshes()) {

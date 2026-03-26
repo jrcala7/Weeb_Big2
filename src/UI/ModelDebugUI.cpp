@@ -26,9 +26,14 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetScale(scale);
         }
 
-        glm::vec4 color = model.GetColor();
-        if (ImGui::ColorEdit4("Color", &color.x)) {
-            model.SetColor(color);
+        glm::vec4 base_color = model.GetBaseColor();
+        if (ImGui::ColorEdit4("Base Color", &base_color.x)) {
+            model.SetBaseColor(base_color);
+        }
+
+        glm::vec4 shadow_color = model.GetShadowColor();
+        if (ImGui::ColorEdit4("Shadow Color", &shadow_color.x)) {
+            model.SetShadowColor(shadow_color);
         }
 
         ImGui::Separator();

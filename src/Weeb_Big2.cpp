@@ -30,7 +30,9 @@ int main(std::int32_t, gsl::zstring[]) {
 		return 1;
 	}
 	bunny.SetScale({10.0f, 10.0f, 10.0f});
-	bunny.SetColor({0.0f, 0.8f, 0.0f, 1.0f});   // green
+	bunny.SetBaseColor({0.0f, 0.8f, 0.0f, 1.0f});    // green
+	bunny.SetShadowColor({0.0f, 0.15f, 0.0f, 1.0f}); // dark green shadow
+	bunny.SetRotation({ 0.0f, 185.0f, 0.0f });
 
 	// Place the camera so it faces the bunny at the origin.
 	// Forward at yaw=0 is +Z, so the camera sits on -Z looking toward it.

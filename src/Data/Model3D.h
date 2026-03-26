@@ -46,8 +46,11 @@ public:
     [[nodiscard]] const glm::vec3& GetScale() const { return scale_; }
     void SetScale(const glm::vec3& scale) { scale_ = scale; }
 
-    [[nodiscard]] const glm::vec4& GetColor() const { return color_; }
-    void SetColor(const glm::vec4& color) { color_ = color; }
+    [[nodiscard]] const glm::vec4& GetBaseColor() const { return base_color_; }
+    void SetBaseColor(const glm::vec4& color) { base_color_ = color; }
+
+    [[nodiscard]] const glm::vec4& GetShadowColor() const { return shadow_color_; }
+    void SetShadowColor(const glm::vec4& color) { shadow_color_ = color; }
 
     // -- Mesh data accessors --------------------------------------------------
 
@@ -63,5 +66,6 @@ private:
     glm::vec3 position_{0.0f, 0.0f, 0.0f};
     glm::vec3 rotation_{0.0f, 0.0f, 0.0f};
     glm::vec3 scale_{1.0f, 1.0f, 1.0f};
-    glm::vec4 color_{1.0f, 1.0f, 1.0f, 1.0f};
+    glm::vec4 base_color_{1.0f, 1.0f, 1.0f, 1.0f};
+    glm::vec4 shadow_color_{0.0f, 0.0f, 0.0f, 1.0f};
 };
