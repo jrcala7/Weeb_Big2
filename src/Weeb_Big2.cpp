@@ -6,9 +6,15 @@
 #include <bgfx/bgfx.h>
 #include <gsl/gsl>
 
+#if BIG2_IMGUI_ENABLED
+#include <big2/imgui/imgui.h>
+#include <big2/macros.h>
+#endif
+
 #include "Data/Model3D.h"
 #include "Data/Camera.h"
 #include "Rendering/ModelRenderer.h"
+#include "UI/CameraDebugUI.h"
 
 int main(std::int32_t, gsl::zstring[]) {
 	AppWindow window("Weeb Big2", {1280, 720});
@@ -47,6 +53,12 @@ int main(std::int32_t, gsl::zstring[]) {
 			0x443355FF, 1.0f, 0);
 		bgfx::touch(win.GetView());
 		renderer.Render(win.GetView(), bunny, camera);
+
+#if BIG2_IMGUI_ENABLED
+		BIG2_SCOPE_VAR(big2::ImGuiFrameScoped) {
+			DrawCameraDebugUI(camera);
+		}
+#endif
 	});
 
 	// Release GPU resources while bgfx is still alive (before Run() destroys it).
