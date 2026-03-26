@@ -103,7 +103,7 @@ private:
     ShaderType shader_type_ = ShaderType::Weeb;
     float step_ = 0.0f;
     float inner_step_ = 0.0f;
-    float curve_step_ = 0.0f;
+    float curve_step_ = 0.1f;
     glm::vec4 inner_edge_color_{0.0f, 0.0f, 0.0f, 1.0f};
     bool outline_enabled_ = true;
     glm::vec4 outline_color_{0.0f, 0.0f, 0.0f, 1.0f};

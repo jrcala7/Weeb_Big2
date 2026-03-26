@@ -37,17 +37,17 @@ void DrawModelDebugUI(Model3D& model) {
         }
 
         float step = model.GetStep();
-        if (ImGui::DragFloat("Step", &step, 0.01f)) {
+        if (ImGui::DragFloat("Step", &step, 0.01f, 0.0f, 1.0f)) {
             model.SetStep(step);
         }
 
         float inner_step = model.GetInnerStep();
-        if (ImGui::DragFloat("Inner Step", &inner_step, 0.01f)) {
+        if (ImGui::DragFloat("Inner Step", &inner_step, 0.01f, 0.0f, 1.0f)) {
             model.SetInnerStep(inner_step);
         }
 
         float curve_step = model.GetCurveStep();
-        if (ImGui::DragFloat("Curve Step", &curve_step, 0.01f)) {
+        if (ImGui::DragFloat("Curve Step", &curve_step, 0.01f, 0.0f, 1.0f)) {
             model.SetCurveStep(curve_step);
         }
 
