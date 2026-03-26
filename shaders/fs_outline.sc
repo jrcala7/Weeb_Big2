@@ -1,4 +1,4 @@
-$input v_normal, v_texcoord0, v_world_pos, v_curvature
+$input v_normal, v_texcoord0, v_world_pos, v_curvature, v_smooth_normal
 
 #include <bgfx_shader.sh>
 

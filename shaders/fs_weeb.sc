@@ -1,17 +1,24 @@
-$input v_normal, v_texcoord0, v_world_pos, v_curvature
+$input v_normal, v_texcoord0, v_world_pos, v_curvature, v_smooth_normal
 
 #include <bgfx_shader.sh>
 
 uniform vec4 u_light_dir;     // xyz = direction (normalized), w = unused
 uniform vec4 u_base_color;    // rgba base color (lit areas)
 uniform vec4 u_shadow_color;  // rgba shadow color (unlit areas)
-uniform vec4 u_step;          // x = step, y = inner_step, z = curve_step, w = unused
+uniform vec4 u_step;          // x = step, y = inner_step, z = curve_step, w = use_smooth_normal
 uniform vec4 u_inner_edge_color; // rgba inner edge color
 uniform vec4 u_view_dir;      // xyz = camera forward direction (normalized), w = unused
 
 void main()
 {
     vec3 normal = normalize(v_normal);
+
+    float use_smooth = u_step.w;
+    if(use_smooth > 0.0)
+    {
+        normal = normalize(v_smooth_normal);
+    }
+
     vec3 light  = normalize(u_light_dir.xyz);
 
     // Lambertian factor: 1.0 in full light, 0.0 in full shadow.

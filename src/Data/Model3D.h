@@ -21,6 +21,7 @@ public:
         glm::vec3 normal{0.0f};
         glm::vec2 uv{0.0f};
         float     curvature{0.0f};
+        glm::vec3 smooth_normal{0.0f};
     };
 
     /// A single sub-mesh inside the model.
@@ -71,6 +72,9 @@ public:
     [[nodiscard]] float GetCurveStep() const { return curve_step_; }
     void SetCurveStep(float curve_step) { curve_step_ = curve_step; }
 
+    [[nodiscard]] bool GetUseSmoothNormal() const { return use_smooth_normal_; }
+    void SetUseSmoothNormal(bool use) { use_smooth_normal_ = use; }
+
     [[nodiscard]] const glm::vec4& GetInnerEdgeColor() const { return inner_edge_color_; }
     void SetInnerEdgeColor(const glm::vec4& color) { inner_edge_color_ = color; }
 
@@ -91,6 +95,7 @@ private:
     void ProcessNode(const struct aiNode* node, const struct aiScene* scene);
     Mesh ProcessMesh(const struct aiMesh* mesh);
     void ComputeCurvature(Mesh& mesh);
+    void ComputeSmoothNormals(Mesh& mesh);
 
     std::vector<Mesh> meshes_;
     std::string error_;
@@ -104,6 +109,7 @@ private:
     float step_ = 0.0f;
     float inner_step_ = 0.0f;
     float curve_step_ = 0.1f;
+    bool use_smooth_normal_ = false;
     glm::vec4 inner_edge_color_{0.0f, 0.0f, 0.0f, 1.0f};
     bool outline_enabled_ = true;
     glm::vec4 outline_color_{0.0f, 0.0f, 0.0f, 1.0f};

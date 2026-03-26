@@ -33,6 +33,7 @@ void Model3D::ProcessNode(const aiNode* node, const aiScene* scene) {
         const aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
         meshes_.push_back(ProcessMesh(mesh));
         ComputeCurvature(meshes_.back());
+        ComputeSmoothNormals(meshes_.back());
     }
 
     for (unsigned int i = 0; i < node->mNumChildren; ++i) {
@@ -128,5 +129,39 @@ void Model3D::ComputeCurvature(Mesh& mesh) {
             sum += raw_curvature[nb];
         }
         mesh.vertices[v].curvature = sum / static_cast<float>(neighbors.size());
+    }
+}
+
+void Model3D::ComputeSmoothNormals(Mesh& mesh) {
+    const size_t vertex_count = mesh.vertices.size();
+    if (vertex_count == 0) {
+        return;
+    }
+
+    // Accumulate face normals into each vertex.
+    // A face normal is the average of its three vertex normals.
+    std::vector<glm::vec3> accum(vertex_count, glm::vec3(0.0f));
+    std::vector<uint32_t>  counts(vertex_count, 0);
+
+    for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
+        uint32_t i0 = mesh.indices[i];
+        uint32_t i1 = mesh.indices[i + 1];
+        uint32_t i2 = mesh.indices[i + 2];
+
+        glm::vec3 face_normal = (mesh.vertices[i0].normal
+                               + mesh.vertices[i1].normal
+                               + mesh.vertices[i2].normal) / 3.0f;
+
+        accum[i0] += face_normal; ++counts[i0];
+        accum[i1] += face_normal; ++counts[i1];
+        accum[i2] += face_normal; ++counts[i2];
+    }
+
+    for (size_t v = 0; v < vertex_count; ++v) {
+        if (counts[v] > 0) {
+            mesh.vertices[v].smooth_normal = glm::normalize(accum[v] / static_cast<float>(counts[v]));
+        } else {
+            mesh.vertices[v].smooth_normal = mesh.vertices[v].normal;
+        }
     }
 }

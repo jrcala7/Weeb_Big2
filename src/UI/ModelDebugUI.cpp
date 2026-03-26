@@ -51,6 +51,11 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetCurveStep(curve_step);
         }
 
+        bool use_smooth_normal = model.GetUseSmoothNormal();
+        if (ImGui::Checkbox("Use Smooth Normal", &use_smooth_normal)) {
+            model.SetUseSmoothNormal(use_smooth_normal);
+        }
+
         glm::vec4 inner_edge_color = model.GetInnerEdgeColor();
         if (ImGui::ColorEdit4("Inner Edge Color", &inner_edge_color.x)) {
             model.SetInnerEdgeColor(inner_edge_color);
