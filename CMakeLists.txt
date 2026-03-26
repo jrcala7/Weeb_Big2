@@ -11,8 +11,17 @@ endif()
 
 project ("Weeb_Big2")
 
+add_subdirectory (external/big2-stack)
+
 # Add source to this project's executable.
-add_executable (Weeb_Big2 "Weeb_Big2.cpp" "Weeb_Big2.h")
+add_executable (Weeb_Big2
+  "Weeb_Big2.cpp"
+  "Weeb_Big2.h"
+  "AppWindow.h"
+  "AppWindow.cpp"
+)
+
+target_link_libraries(Weeb_Big2 PRIVATE BIG2)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Weeb_Big2 PROPERTY CXX_STANDARD 20)
