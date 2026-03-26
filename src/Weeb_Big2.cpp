@@ -13,8 +13,11 @@
 
 #include "Data/Model3D.h"
 #include "Data/Camera.h"
+#include "Data/Light.h"
 #include "Rendering/ModelRenderer.h"
 #include "UI/CameraDebugUI.h"
+#include "UI/LightDebugUI.h"
+#include "UI/ModelDebugUI.h"
 
 int main(std::int32_t, gsl::zstring[]) {
 	AppWindow window("Weeb Big2", {1280, 720});
@@ -27,6 +30,7 @@ int main(std::int32_t, gsl::zstring[]) {
 		return 1;
 	}
 	bunny.SetScale({10.0f, 10.0f, 10.0f});
+	bunny.SetColor({0.0f, 0.8f, 0.0f, 1.0f});   // green
 
 	// Place the camera so it faces the bunny at the origin.
 	// Forward at yaw=0 is +Z, so the camera sits on -Z looking toward it.
@@ -37,14 +41,14 @@ int main(std::int32_t, gsl::zstring[]) {
 		1280.0f / 720.0f       // aspect ratio matching the window
 	);
 
+	DirectionalLight light({-0.5f, -1.0f, -0.5f});
+
 	ModelRenderer renderer;
 
 	window.SetRenderCallback([&](big2::Window& win, float /*dt*/) {
 		// Lazy-init: ModelRenderer needs bgfx to be up, which happens inside Run().
 		if (!renderer.IsInitialized()) {
 			renderer.Init();
-			renderer.SetColor({0.0f, 0.8f, 0.0f, 1.0f});              // green
-			renderer.SetLightDirection({-0.5f, -1.0f, -0.5f});
 		}
 
 		// Clear both color and depth each frame so the depth test works.
@@ -52,11 +56,13 @@ int main(std::int32_t, gsl::zstring[]) {
 			BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
 			0x443355FF, 1.0f, 0);
 		bgfx::touch(win.GetView());
-		renderer.Render(win.GetView(), bunny, camera);
+		renderer.Render(win.GetView(), bunny, camera, light);
 
 #if BIG2_IMGUI_ENABLED
 		BIG2_SCOPE_VAR(big2::ImGuiFrameScoped) {
 			DrawCameraDebugUI(camera);
+			DrawLightDebugUI(light);
+			DrawModelDebugUI(bunny);
 		}
 #endif
 	});

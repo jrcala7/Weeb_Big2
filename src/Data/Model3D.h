@@ -46,6 +46,9 @@ public:
     [[nodiscard]] const glm::vec3& GetScale() const { return scale_; }
     void SetScale(const glm::vec3& scale) { scale_ = scale; }
 
+    [[nodiscard]] const glm::vec4& GetColor() const { return color_; }
+    void SetColor(const glm::vec4& color) { color_ = color; }
+
     // -- Mesh data accessors --------------------------------------------------
 
     [[nodiscard]] const std::vector<Mesh>& GetMeshes() const { return meshes_; }
@@ -60,4 +63,5 @@ private:
     glm::vec3 position_{0.0f, 0.0f, 0.0f};
     glm::vec3 rotation_{0.0f, 0.0f, 0.0f};
     glm::vec3 scale_{1.0f, 1.0f, 1.0f};
+    glm::vec4 color_{1.0f, 1.0f, 1.0f, 1.0f};
 };

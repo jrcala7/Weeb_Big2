@@ -7,6 +7,7 @@
 
 #include "Data/Model3D.h"
 #include "Data/Camera.h"
+#include "Data/Light.h"
 
 // ---------------------------------------------------------------------------
 // Embedded shaders compiled at build time by bgfx shaderc.
@@ -74,7 +75,8 @@ bool ModelRenderer::IsInitialized() const {
 // ---------------------------------------------------------------------------
 void ModelRenderer::Render(bgfx::ViewId view_id,
                            const Model3D& model,
-                           const Camera& camera) {
+                           const Camera& camera,
+                           const DirectionalLight& light) {
     if (!IsInitialized() || !model.IsLoaded()) {
         return;
     }
@@ -93,11 +95,12 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
     mtx = glm::scale(mtx, model.GetScale());
 
     // ---- Uniforms -----------------------------------------------------------
-    glm::vec3 dir = glm::normalize(light_dir_);
+    glm::vec3 dir = glm::normalize(light.GetDirection());
     float light_dir_arr[4] = {dir.x, dir.y, dir.z, 0.0f};
     bgfx::setUniform(u_light_dir_, light_dir_arr);
 
-    float color_arr[4] = {color_.r, color_.g, color_.b, color_.a};
+    const glm::vec4& color = model.GetColor();
+    float color_arr[4] = {color.r, color.g, color.b, color.a};
     bgfx::setUniform(u_color_, color_arr);
 
     // ---- Submit each sub-mesh -----------------------------------------------
