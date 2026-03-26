@@ -6,6 +6,7 @@ uniform vec4 u_light_dir;     // xyz = direction (normalized), w = unused
 uniform vec4 u_base_color;    // rgba base color (lit areas)
 uniform vec4 u_shadow_color;  // rgba shadow color (unlit areas)
 uniform vec4 u_step;          // x = step, y = inner_step, zw = unused
+uniform vec4 u_inner_edge_color; // rgba inner edge color
 uniform vec4 u_view_dir;      // xyz = camera forward direction (normalized), w = unused
 
 void main()
@@ -29,10 +30,9 @@ void main()
     float alpha = mix(u_shadow_color.a, u_base_color.a, ndotl);
 
     float inner_s = u_step.y;
-    if(inner_s > vdotl) //If near edge and within inner step, turn to black
+    if(inner_s > vdotl) //If near edge and within inner step, use inner edge color
     {
-        vec3 edge_color = vec3(0.0, 0.0, 0.0);
-        gl_FragColor = vec4(edge_color, alpha);
+        gl_FragColor = vec4(u_inner_edge_color.rgb, alpha);
     }
     else
     {

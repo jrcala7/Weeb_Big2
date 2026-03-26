@@ -46,6 +46,11 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetInnerStep(inner_step);
         }
 
+        glm::vec4 inner_edge_color = model.GetInnerEdgeColor();
+        if (ImGui::ColorEdit4("Inner Edge Color", &inner_edge_color.x)) {
+            model.SetInnerEdgeColor(inner_edge_color);
+        }
+
         ImGui::Separator();
         static const char* kShaderNames[] = { "Model", "Weeb" };
         int current = static_cast<int>(model.GetShaderType());

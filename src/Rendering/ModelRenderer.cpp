@@ -67,8 +67,9 @@ bool ModelRenderer::Init() {
     u_color_        = bgfx::createUniform("u_color",        bgfx::UniformType::Vec4);
     u_base_color_   = bgfx::createUniform("u_base_color",   bgfx::UniformType::Vec4);
     u_shadow_color_ = bgfx::createUniform("u_shadow_color", bgfx::UniformType::Vec4);
-    u_step_           = bgfx::createUniform("u_step",           bgfx::UniformType::Vec4);
-    u_view_dir_       = bgfx::createUniform("u_view_dir",       bgfx::UniformType::Vec4);
+    u_step_              = bgfx::createUniform("u_step",              bgfx::UniformType::Vec4);
+    u_inner_edge_color_  = bgfx::createUniform("u_inner_edge_color",  bgfx::UniformType::Vec4);
+    u_view_dir_          = bgfx::createUniform("u_view_dir",          bgfx::UniformType::Vec4);
     u_outline_color_  = bgfx::createUniform("u_outline_color",  bgfx::UniformType::Vec4);
     u_outline_params_ = bgfx::createUniform("u_outline_params", bgfx::UniformType::Vec4);
 
@@ -114,6 +115,10 @@ void ModelRenderer::Shutdown() {
     if (bgfx::isValid(u_step_)) {
         bgfx::destroy(u_step_);
         u_step_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_inner_edge_color_)) {
+        bgfx::destroy(u_inner_edge_color_);
+        u_inner_edge_color_ = BGFX_INVALID_HANDLE;
     }
     if (bgfx::isValid(u_view_dir_)) {
         bgfx::destroy(u_view_dir_);
@@ -173,6 +178,10 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
 
         float step_arr[4] = {model.GetStep(), model.GetInnerStep(), 0.0f, 0.0f};
         bgfx::setUniform(u_step_, step_arr);
+
+        const glm::vec4& inner_edge_color = model.GetInnerEdgeColor();
+        float inner_edge_color_arr[4] = {inner_edge_color.r, inner_edge_color.g, inner_edge_color.b, inner_edge_color.a};
+        bgfx::setUniform(u_inner_edge_color_, inner_edge_color_arr);
 
         glm::vec3 view_dir = glm::normalize(camera.GetForward());
         float view_dir_arr[4] = {view_dir.x, view_dir.y, view_dir.z, 0.0f};

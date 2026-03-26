@@ -48,6 +48,7 @@ private:
     bgfx::UniformHandle u_base_color_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_shadow_color_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_step_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle u_inner_edge_color_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_view_dir_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_outline_color_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_outline_params_ = BGFX_INVALID_HANDLE;
