@@ -64,6 +64,15 @@ public:
     [[nodiscard]] float GetStep() const { return step_; }
     void SetStep(float step) { step_ = step; }
 
+    [[nodiscard]] bool GetOutlineEnabled() const { return outline_enabled_; }
+    void SetOutlineEnabled(bool enabled) { outline_enabled_ = enabled; }
+
+    [[nodiscard]] const glm::vec4& GetOutlineColor() const { return outline_color_; }
+    void SetOutlineColor(const glm::vec4& color) { outline_color_ = color; }
+
+    [[nodiscard]] float GetOutlineThickness() const { return outline_thickness_; }
+    void SetOutlineThickness(float thickness) { outline_thickness_ = thickness; }
+
     // -- Mesh data accessors --------------------------------------------------
 
     [[nodiscard]] const std::vector<Mesh>& GetMeshes() const { return meshes_; }
@@ -82,4 +91,7 @@ private:
     glm::vec4 shadow_color_{0.0f, 0.0f, 0.0f, 1.0f};
     ShaderType shader_type_ = ShaderType::Weeb;
     float step_ = 0.0f;
+    bool outline_enabled_ = true;
+    glm::vec4 outline_color_{0.0f, 0.0f, 0.0f, 1.0f};
+    float outline_thickness_ = 0.02f;
 };

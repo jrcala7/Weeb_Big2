@@ -17,6 +17,8 @@ static const bgfx::EmbeddedShader kEmbeddedShaders[] = {
     BGFX_EMBEDDED_SHADER(fs_model),
     BGFX_EMBEDDED_SHADER(vs_weeb),
     BGFX_EMBEDDED_SHADER(fs_weeb),
+    BGFX_EMBEDDED_SHADER(vs_outline),
+    BGFX_EMBEDDED_SHADER(fs_outline),
     BGFX_EMBEDDED_SHADER_END()
 };
 
@@ -52,11 +54,22 @@ bool ModelRenderer::Init() {
         return false;
     }
 
+    // ---- Outline program (inverted hull) ------------------------------------
+    bgfx::ShaderHandle vs_o = bgfx::createEmbeddedShader(kEmbeddedShaders, renderer, "vs_outline");
+    bgfx::ShaderHandle fs_o = bgfx::createEmbeddedShader(kEmbeddedShaders, renderer, "fs_outline");
+    outline_program_ = bgfx::createProgram(vs_o, fs_o, true);
+
+    if (!bgfx::isValid(outline_program_)) {
+        return false;
+    }
+
     u_light_dir_    = bgfx::createUniform("u_light_dir",    bgfx::UniformType::Vec4);
     u_color_        = bgfx::createUniform("u_color",        bgfx::UniformType::Vec4);
     u_base_color_   = bgfx::createUniform("u_base_color",   bgfx::UniformType::Vec4);
     u_shadow_color_ = bgfx::createUniform("u_shadow_color", bgfx::UniformType::Vec4);
-    u_step_         = bgfx::createUniform("u_step",         bgfx::UniformType::Vec4);
+    u_step_           = bgfx::createUniform("u_step",           bgfx::UniformType::Vec4);
+    u_outline_color_  = bgfx::createUniform("u_outline_color",  bgfx::UniformType::Vec4);
+    u_outline_params_ = bgfx::createUniform("u_outline_params", bgfx::UniformType::Vec4);
 
     vertex_layout_
         .begin()
@@ -76,6 +89,10 @@ void ModelRenderer::Shutdown() {
     if (bgfx::isValid(weeb_program_)) {
         bgfx::destroy(weeb_program_);
         weeb_program_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(outline_program_)) {
+        bgfx::destroy(outline_program_);
+        outline_program_ = BGFX_INVALID_HANDLE;
     }
     if (bgfx::isValid(u_light_dir_)) {
         bgfx::destroy(u_light_dir_);
@@ -97,10 +114,18 @@ void ModelRenderer::Shutdown() {
         bgfx::destroy(u_step_);
         u_step_ = BGFX_INVALID_HANDLE;
     }
+    if (bgfx::isValid(u_outline_color_)) {
+        bgfx::destroy(u_outline_color_);
+        u_outline_color_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_outline_params_)) {
+        bgfx::destroy(u_outline_params_);
+        u_outline_params_ = BGFX_INVALID_HANDLE;
+    }
 }
 
 bool ModelRenderer::IsInitialized() const {
-    return bgfx::isValid(model_program_) && bgfx::isValid(weeb_program_);
+    return bgfx::isValid(model_program_) && bgfx::isValid(weeb_program_) && bgfx::isValid(outline_program_);
 }
 
 // ---------------------------------------------------------------------------
@@ -187,5 +212,38 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
         );
 
         bgfx::submit(view_id, active_program);
+
+        // ---- Outline pass (inverted hull) -----------------------------------
+        if (model.GetShaderType() == ShaderType::Weeb && model.GetOutlineEnabled()) {
+            bgfx::TransientVertexBuffer tvb_outline;
+            bgfx::TransientIndexBuffer  tib_outline;
+
+            if (bgfx::allocTransientBuffers(&tvb_outline, vertex_layout_, num_vertices, &tib_outline, num_indices, true)) {
+                bx::memCopy(tvb_outline.data, mesh.vertices.data(), num_vertices * sizeof(Model3D::Vertex));
+                bx::memCopy(tib_outline.data, mesh.indices.data(),  num_indices  * sizeof(uint32_t));
+
+                const glm::vec4& outline_color = model.GetOutlineColor();
+                float outline_color_arr[4] = {outline_color.r, outline_color.g, outline_color.b, outline_color.a};
+                bgfx::setUniform(u_outline_color_, outline_color_arr);
+
+                float outline_params_arr[4] = {model.GetOutlineThickness(), 0.0f, 0.0f, 0.0f};
+                bgfx::setUniform(u_outline_params_, outline_params_arr);
+
+                bgfx::setTransform(glm::value_ptr(mtx));
+                bgfx::setVertexBuffer(0, &tvb_outline);
+                bgfx::setIndexBuffer(&tib_outline);
+
+                bgfx::setState(
+                    BGFX_STATE_WRITE_RGB
+                    | BGFX_STATE_WRITE_A
+                    | BGFX_STATE_WRITE_Z
+                    | BGFX_STATE_DEPTH_TEST_LESS
+                    | BGFX_STATE_CULL_CCW
+                    | BGFX_STATE_MSAA
+                );
+
+                bgfx::submit(view_id, outline_program_);
+            }
+        }
     }
 }

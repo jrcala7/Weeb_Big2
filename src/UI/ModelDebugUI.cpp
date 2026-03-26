@@ -48,6 +48,26 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetShaderType(static_cast<ShaderType>(current));
         }
 
+        if (model.GetShaderType() == ShaderType::Weeb) {
+            ImGui::Separator();
+            ImGui::Text("Outline");
+
+            bool outline_enabled = model.GetOutlineEnabled();
+            if (ImGui::Checkbox("Enabled", &outline_enabled)) {
+                model.SetOutlineEnabled(outline_enabled);
+            }
+
+            glm::vec4 outline_color = model.GetOutlineColor();
+            if (ImGui::ColorEdit4("Outline Color", &outline_color.x)) {
+                model.SetOutlineColor(outline_color);
+            }
+
+            float outline_thickness = model.GetOutlineThickness();
+            if (ImGui::DragFloat("Thickness", &outline_thickness, 0.001f, 0.0f, 1.0f)) {
+                model.SetOutlineThickness(outline_thickness);
+            }
+        }
+
         ImGui::Separator();
         const auto& meshes = model.GetMeshes();
         ImGui::Text("Meshes: %zu", meshes.size());
