@@ -41,6 +41,11 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetStep(step);
         }
 
+        float inner_step = model.GetInnerStep();
+        if (ImGui::DragFloat("Inner Step", &inner_step, 0.01f)) {
+            model.SetInnerStep(inner_step);
+        }
+
         ImGui::Separator();
         static const char* kShaderNames[] = { "Model", "Weeb" };
         int current = static_cast<int>(model.GetShaderType());

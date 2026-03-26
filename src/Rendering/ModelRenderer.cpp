@@ -68,6 +68,7 @@ bool ModelRenderer::Init() {
     u_base_color_   = bgfx::createUniform("u_base_color",   bgfx::UniformType::Vec4);
     u_shadow_color_ = bgfx::createUniform("u_shadow_color", bgfx::UniformType::Vec4);
     u_step_           = bgfx::createUniform("u_step",           bgfx::UniformType::Vec4);
+    u_view_dir_       = bgfx::createUniform("u_view_dir",       bgfx::UniformType::Vec4);
     u_outline_color_  = bgfx::createUniform("u_outline_color",  bgfx::UniformType::Vec4);
     u_outline_params_ = bgfx::createUniform("u_outline_params", bgfx::UniformType::Vec4);
 
@@ -113,6 +114,10 @@ void ModelRenderer::Shutdown() {
     if (bgfx::isValid(u_step_)) {
         bgfx::destroy(u_step_);
         u_step_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_view_dir_)) {
+        bgfx::destroy(u_view_dir_);
+        u_view_dir_ = BGFX_INVALID_HANDLE;
     }
     if (bgfx::isValid(u_outline_color_)) {
         bgfx::destroy(u_outline_color_);
@@ -166,8 +171,12 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
         float shadow_color_arr[4] = {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a};
         bgfx::setUniform(u_shadow_color_, shadow_color_arr);
 
-        float step_arr[4] = {model.GetStep(), 0.0f, 0.0f, 0.0f};
+        float step_arr[4] = {model.GetStep(), model.GetInnerStep(), 0.0f, 0.0f};
         bgfx::setUniform(u_step_, step_arr);
+
+        glm::vec3 view_dir = glm::normalize(camera.GetForward());
+        float view_dir_arr[4] = {view_dir.x, view_dir.y, view_dir.z, 0.0f};
+        bgfx::setUniform(u_view_dir_, view_dir_arr);
 
         active_program = weeb_program_;
     } else {

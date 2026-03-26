@@ -64,6 +64,9 @@ public:
     [[nodiscard]] float GetStep() const { return step_; }
     void SetStep(float step) { step_ = step; }
 
+    [[nodiscard]] float GetInnerStep() const { return inner_step_; }
+    void SetInnerStep(float inner_step) { inner_step_ = inner_step; }
+
     [[nodiscard]] bool GetOutlineEnabled() const { return outline_enabled_; }
     void SetOutlineEnabled(bool enabled) { outline_enabled_ = enabled; }
 
@@ -91,6 +94,7 @@ private:
     glm::vec4 shadow_color_{0.0f, 0.0f, 0.0f, 1.0f};
     ShaderType shader_type_ = ShaderType::Weeb;
     float step_ = 0.0f;
+    float inner_step_ = 0.0f;
     bool outline_enabled_ = true;
     glm::vec4 outline_color_{0.0f, 0.0f, 0.0f, 1.0f};
     float outline_thickness_ = 0.02f;
