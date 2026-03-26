@@ -61,6 +61,9 @@ public:
     [[nodiscard]] ShaderType GetShaderType() const { return shader_type_; }
     void SetShaderType(ShaderType type) { shader_type_ = type; }
 
+    [[nodiscard]] float GetStep() const { return step_; }
+    void SetStep(float step) { step_ = step; }
+
     // -- Mesh data accessors --------------------------------------------------
 
     [[nodiscard]] const std::vector<Mesh>& GetMeshes() const { return meshes_; }
@@ -78,4 +81,5 @@ private:
     glm::vec4 base_color_{1.0f, 1.0f, 1.0f, 1.0f};
     glm::vec4 shadow_color_{0.0f, 0.0f, 0.0f, 1.0f};
     ShaderType shader_type_ = ShaderType::Weeb;
+    float step_ = 0.0f;
 };

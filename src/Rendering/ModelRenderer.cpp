@@ -56,6 +56,7 @@ bool ModelRenderer::Init() {
     u_color_        = bgfx::createUniform("u_color",        bgfx::UniformType::Vec4);
     u_base_color_   = bgfx::createUniform("u_base_color",   bgfx::UniformType::Vec4);
     u_shadow_color_ = bgfx::createUniform("u_shadow_color", bgfx::UniformType::Vec4);
+    u_step_         = bgfx::createUniform("u_step",         bgfx::UniformType::Vec4);
 
     vertex_layout_
         .begin()
@@ -91,6 +92,10 @@ void ModelRenderer::Shutdown() {
     if (bgfx::isValid(u_shadow_color_)) {
         bgfx::destroy(u_shadow_color_);
         u_shadow_color_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_step_)) {
+        bgfx::destroy(u_step_);
+        u_step_ = BGFX_INVALID_HANDLE;
     }
 }
 
@@ -135,6 +140,9 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
         const glm::vec4& shadow_color = model.GetShadowColor();
         float shadow_color_arr[4] = {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a};
         bgfx::setUniform(u_shadow_color_, shadow_color_arr);
+
+        float step_arr[4] = {model.GetStep(), 0.0f, 0.0f, 0.0f};
+        bgfx::setUniform(u_step_, step_arr);
 
         active_program = weeb_program_;
     } else {

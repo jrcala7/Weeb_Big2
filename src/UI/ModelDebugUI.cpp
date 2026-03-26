@@ -36,6 +36,11 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetShadowColor(shadow_color);
         }
 
+        float step = model.GetStep();
+        if (ImGui::DragFloat("Step", &step, 0.01f)) {
+            model.SetStep(step);
+        }
+
         ImGui::Separator();
         static const char* kShaderNames[] = { "Model", "Weeb" };
         int current = static_cast<int>(model.GetShaderType());
