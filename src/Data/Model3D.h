@@ -5,6 +5,12 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+/// @brief Available shader programs for rendering a model.
+enum class ShaderType : std::uint8_t {
+    Model = 0,  ///< Original shader (single color + ambient).
+    Weeb  = 1,  ///< Weeb shader (base color / shadow color blend).
+};
+
 /// @brief Holds the geometry of a 3D model loaded with Assimp together with
 ///        world-space transform properties (position, rotation, scale).
 class Model3D final {
@@ -52,6 +58,9 @@ public:
     [[nodiscard]] const glm::vec4& GetShadowColor() const { return shadow_color_; }
     void SetShadowColor(const glm::vec4& color) { shadow_color_ = color; }
 
+    [[nodiscard]] ShaderType GetShaderType() const { return shader_type_; }
+    void SetShaderType(ShaderType type) { shader_type_ = type; }
+
     // -- Mesh data accessors --------------------------------------------------
 
     [[nodiscard]] const std::vector<Mesh>& GetMeshes() const { return meshes_; }
@@ -68,4 +77,5 @@ private:
     glm::vec3 scale_{1.0f, 1.0f, 1.0f};
     glm::vec4 base_color_{1.0f, 1.0f, 1.0f, 1.0f};
     glm::vec4 shadow_color_{0.0f, 0.0f, 0.0f, 1.0f};
+    ShaderType shader_type_ = ShaderType::Weeb;
 };

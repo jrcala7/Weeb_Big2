@@ -37,6 +37,13 @@ void DrawModelDebugUI(Model3D& model) {
         }
 
         ImGui::Separator();
+        static const char* kShaderNames[] = { "Model", "Weeb" };
+        int current = static_cast<int>(model.GetShaderType());
+        if (ImGui::Combo("Shader", &current, kShaderNames, IM_ARRAYSIZE(kShaderNames))) {
+            model.SetShaderType(static_cast<ShaderType>(current));
+        }
+
+        ImGui::Separator();
         const auto& meshes = model.GetMeshes();
         ImGui::Text("Meshes: %zu", meshes.size());
 

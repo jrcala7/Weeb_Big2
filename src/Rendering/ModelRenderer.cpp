@@ -15,6 +15,8 @@
 static const bgfx::EmbeddedShader kEmbeddedShaders[] = {
     BGFX_EMBEDDED_SHADER(vs_model),
     BGFX_EMBEDDED_SHADER(fs_model),
+    BGFX_EMBEDDED_SHADER(vs_weeb),
+    BGFX_EMBEDDED_SHADER(fs_weeb),
     BGFX_EMBEDDED_SHADER_END()
 };
 
@@ -32,16 +34,27 @@ bool ModelRenderer::Init() {
 
     bgfx::RendererType::Enum renderer = bgfx::getRendererType();
 
-    bgfx::ShaderHandle vs = bgfx::createEmbeddedShader(kEmbeddedShaders, renderer, "vs_model");
-    bgfx::ShaderHandle fs = bgfx::createEmbeddedShader(kEmbeddedShaders, renderer, "fs_model");
-    program_ = bgfx::createProgram(vs, fs, true);
+    // ---- Model program (old) ------------------------------------------------
+    bgfx::ShaderHandle vs_m = bgfx::createEmbeddedShader(kEmbeddedShaders, renderer, "vs_model");
+    bgfx::ShaderHandle fs_m = bgfx::createEmbeddedShader(kEmbeddedShaders, renderer, "fs_model");
+    model_program_ = bgfx::createProgram(vs_m, fs_m, true);
 
-    if (!bgfx::isValid(program_)) {
+    if (!bgfx::isValid(model_program_)) {
+        return false;
+    }
+
+    // ---- Weeb program (new) -------------------------------------------------
+    bgfx::ShaderHandle vs_w = bgfx::createEmbeddedShader(kEmbeddedShaders, renderer, "vs_weeb");
+    bgfx::ShaderHandle fs_w = bgfx::createEmbeddedShader(kEmbeddedShaders, renderer, "fs_weeb");
+    weeb_program_ = bgfx::createProgram(vs_w, fs_w, true);
+
+    if (!bgfx::isValid(weeb_program_)) {
         return false;
     }
 
     u_light_dir_    = bgfx::createUniform("u_light_dir",    bgfx::UniformType::Vec4);
-    u_base_color_   = bgfx::createUniform("u_color",        bgfx::UniformType::Vec4);
+    u_color_        = bgfx::createUniform("u_color",        bgfx::UniformType::Vec4);
+    u_base_color_   = bgfx::createUniform("u_base_color",   bgfx::UniformType::Vec4);
     u_shadow_color_ = bgfx::createUniform("u_shadow_color", bgfx::UniformType::Vec4);
 
     vertex_layout_
@@ -55,13 +68,21 @@ bool ModelRenderer::Init() {
 }
 
 void ModelRenderer::Shutdown() {
-    if (bgfx::isValid(program_)) {
-        bgfx::destroy(program_);
-        program_ = BGFX_INVALID_HANDLE;
+    if (bgfx::isValid(model_program_)) {
+        bgfx::destroy(model_program_);
+        model_program_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(weeb_program_)) {
+        bgfx::destroy(weeb_program_);
+        weeb_program_ = BGFX_INVALID_HANDLE;
     }
     if (bgfx::isValid(u_light_dir_)) {
         bgfx::destroy(u_light_dir_);
         u_light_dir_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_color_)) {
+        bgfx::destroy(u_color_);
+        u_color_ = BGFX_INVALID_HANDLE;
     }
     if (bgfx::isValid(u_base_color_)) {
         bgfx::destroy(u_base_color_);
@@ -74,7 +95,7 @@ void ModelRenderer::Shutdown() {
 }
 
 bool ModelRenderer::IsInitialized() const {
-    return bgfx::isValid(program_);
+    return bgfx::isValid(model_program_) && bgfx::isValid(weeb_program_);
 }
 
 // ---------------------------------------------------------------------------
@@ -104,13 +125,25 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
     float light_dir_arr[4] = {dir.x, dir.y, dir.z, 0.0f};
     bgfx::setUniform(u_light_dir_, light_dir_arr);
 
-    const glm::vec4& base_color = model.GetBaseColor();
-    float base_color_arr[4] = {base_color.r, base_color.g, base_color.b, base_color.a};
-    bgfx::setUniform(u_base_color_, base_color_arr);
+    bgfx::ProgramHandle active_program = BGFX_INVALID_HANDLE;
 
-    const glm::vec4& shadow_color = model.GetShadowColor();
-    float shadow_color_arr[4] = {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a};
-    bgfx::setUniform(u_shadow_color_, shadow_color_arr);
+    if (model.GetShaderType() == ShaderType::Weeb) {
+        const glm::vec4& base_color = model.GetBaseColor();
+        float base_color_arr[4] = {base_color.r, base_color.g, base_color.b, base_color.a};
+        bgfx::setUniform(u_base_color_, base_color_arr);
+
+        const glm::vec4& shadow_color = model.GetShadowColor();
+        float shadow_color_arr[4] = {shadow_color.r, shadow_color.g, shadow_color.b, shadow_color.a};
+        bgfx::setUniform(u_shadow_color_, shadow_color_arr);
+
+        active_program = weeb_program_;
+    } else {
+        const glm::vec4& base_color = model.GetBaseColor();
+        float color_arr[4] = {base_color.r, base_color.g, base_color.b, base_color.a};
+        bgfx::setUniform(u_color_, color_arr);
+
+        active_program = model_program_;
+    }
 
     // ---- Submit each sub-mesh -----------------------------------------------
     for (const auto& mesh : model.GetMeshes()) {
@@ -145,6 +178,6 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
             | BGFX_STATE_MSAA
         );
 
-        bgfx::submit(view_id, program_);
+        bgfx::submit(view_id, active_program);
     }
 }

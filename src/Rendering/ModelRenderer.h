@@ -40,8 +40,10 @@ public:
                 const DirectionalLight& light);
 
 private:
-    bgfx::ProgramHandle program_ = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle model_program_ = BGFX_INVALID_HANDLE;
+    bgfx::ProgramHandle weeb_program_  = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_light_dir_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle u_color_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_base_color_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_shadow_color_ = BGFX_INVALID_HANDLE;
     bgfx::VertexLayout  vertex_layout_;
