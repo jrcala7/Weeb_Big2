@@ -4,10 +4,20 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/material.h>
+
+void Model3D::Unload() {
+    meshes_.clear();
+    error_.clear();
+    directory_.clear();
+}
 
 bool Model3D::Load(const std::string& path) {
     meshes_.clear();
     error_.clear();
+
+    auto last_sep = path.find_last_of("/\\");
+    directory_ = (last_sep != std::string::npos) ? path.substr(0, last_sep + 1) : "";
 
     Assimp::Importer importer;
 
@@ -31,7 +41,8 @@ bool Model3D::Load(const std::string& path) {
 void Model3D::ProcessNode(const aiNode* node, const aiScene* scene) {
     for (unsigned int i = 0; i < node->mNumMeshes; ++i) {
         const aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        meshes_.push_back(ProcessMesh(mesh));
+        const aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+        meshes_.push_back(ProcessMesh(mesh, material, directory_));
         ComputeCurvature(meshes_.back());
         ComputeSmoothNormals(meshes_.back());
     }
@@ -41,7 +52,7 @@ void Model3D::ProcessNode(const aiNode* node, const aiScene* scene) {
     }
 }
 
-Model3D::Mesh Model3D::ProcessMesh(const aiMesh* mesh) {
+Model3D::Mesh Model3D::ProcessMesh(const aiMesh* mesh, const aiMaterial* material, const std::string& directory) {
     Mesh result;
     result.vertices.reserve(mesh->mNumVertices);
 
@@ -76,6 +87,15 @@ Model3D::Mesh Model3D::ProcessMesh(const aiMesh* mesh) {
         const aiFace& face = mesh->mFaces[i];
         for (unsigned int j = 0; j < face.mNumIndices; ++j) {
             result.indices.push_back(face.mIndices[j]);
+        }
+    }
+
+    // Load the base color (diffuse) texture from the material, if any.
+    if (material != nullptr) {
+        aiString tex_path;
+        if (material->GetTexture(aiTextureType_DIFFUSE, 0, &tex_path) == aiReturn_SUCCESS) {
+            std::string full_path = directory + tex_path.C_Str();
+            result.base_color_texture.Load(full_path);
         }
     }
 
@@ -138,30 +158,55 @@ void Model3D::ComputeSmoothNormals(Mesh& mesh) {
         return;
     }
 
-    // Accumulate face normals into each vertex.
-    // A face normal is the average of its three vertex normals.
+    // Accumulate area-weighted face normals into each vertex.
+    // The cross product of two edges yields a vector whose magnitude is
+    // proportional to twice the triangle area, so larger faces contribute
+    // more to the smooth normal than smaller ones.
     std::vector<glm::vec3> accum(vertex_count, glm::vec3(0.0f));
-    std::vector<uint32_t>  counts(vertex_count, 0);
 
     for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
         uint32_t i0 = mesh.indices[i];
         uint32_t i1 = mesh.indices[i + 1];
         uint32_t i2 = mesh.indices[i + 2];
 
-        glm::vec3 face_normal = (mesh.vertices[i0].normal
-                               + mesh.vertices[i1].normal
-                               + mesh.vertices[i2].normal) / 3.0f;
+        const glm::vec3& p0 = mesh.vertices[i0].position;
+        const glm::vec3& p1 = mesh.vertices[i1].position;
+        const glm::vec3& p2 = mesh.vertices[i2].position;
 
-        accum[i0] += face_normal; ++counts[i0];
-        accum[i1] += face_normal; ++counts[i1];
-        accum[i2] += face_normal; ++counts[i2];
+        // Area-weighted face normal (magnitude = 2 * triangle area).
+        glm::vec3 face_normal = glm::cross(p1 - p0, p2 - p0);
+
+        accum[i0] += face_normal;
+        accum[i1] += face_normal;
+        accum[i2] += face_normal;
     }
 
     for (size_t v = 0; v < vertex_count; ++v) {
-        if (counts[v] > 0) {
-            mesh.vertices[v].smooth_normal = glm::normalize(accum[v] / static_cast<float>(counts[v]));
+        float len = glm::length(accum[v]);
+        if (len > 1e-6f) {
+            mesh.vertices[v].smooth_normal = accum[v] / len;
         } else {
             mesh.vertices[v].smooth_normal = mesh.vertices[v].normal;
         }
     }
+}
+
+bool Model3D::ReplaceAllTextures(const std::string& path) {
+    Texture2D new_texture;
+    if (!new_texture.Load(path)) {
+        return false;
+    }
+
+    // Move the loaded texture into the first mesh and reload from the same
+    // path for every subsequent mesh so each owns its own GPU handle.
+    for (size_t i = 0; i < meshes_.size(); ++i) {
+        if (i == 0) {
+            meshes_[i].base_color_texture = std::move(new_texture);
+        } else {
+            meshes_[i].base_color_texture.Unload();
+            meshes_[i].base_color_texture.Load(path);
+        }
+    }
+
+    return true;
 }

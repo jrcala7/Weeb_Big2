@@ -13,6 +13,7 @@ project ("Weeb_Big2")
 
 add_subdirectory (external/big2-stack)
 add_subdirectory (external/assimp)
+add_subdirectory (external/stb)
 
 # Compile bgfx shaders into embedded headers.
 add_shaders_directory(shaders WEEB_SHADERS_TARGET)
@@ -27,7 +28,7 @@ file(GLOB_RECURSE WEEB_BIG2_SOURCES CONFIGURE_DEPENDS
 add_executable (Weeb_Big2 ${WEEB_BIG2_SOURCES})
 target_include_directories(Weeb_Big2 PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-target_link_libraries(Weeb_Big2 PRIVATE BIG2 assimp ${WEEB_SHADERS_TARGET})
+target_link_libraries(Weeb_Big2 PRIVATE BIG2 assimp stb ${WEEB_SHADERS_TARGET})
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Weeb_Big2 PROPERTY CXX_STANDARD 20)

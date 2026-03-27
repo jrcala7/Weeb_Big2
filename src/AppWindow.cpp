@@ -23,6 +23,13 @@ static std::shared_ptr<AppWindow::RenderCallback> s_pending_cb;
 #if BIG2_IMGUI_ENABLED
 class ImGuiOverlayExtension final : public big2::AppExtensionBase {
 protected:
+    void OnInitialize() override {
+        // Handle windows that were created before this extension was added.
+        for (big2::Window& window : app_->GetWindows()) {
+            OnWindowCreated(window);
+        }
+    }
+
     void OnWindowCreated(big2::Window& window) override {
         AppExtensionBase::OnWindowCreated(window);
         imgui_view_ = big2::ReserveViewId();
@@ -94,31 +101,49 @@ void AppWindow::SetClearColor(std::uint32_t rgba) {
     clear_color_ = rgba;
 }
 
-void AppWindow::Run() {
-    // Force the Vulkan renderer.
-    big2::App app(bgfx::RendererType::Vulkan);
+void AppWindow::Init() {
+    if (app_) {
+        return; // Already initialized.
+    }
+    // Force the Vulkan renderer.  This creates the GLFW window system.
+    // For Vulkan the actual bgfx::init() is deferred until a window exists,
+    // so we also create the window here to ensure bgfx (allocator, texture
+    // creation, etc.) is fully available when Init() returns.
+    app_ = std::make_unique<big2::App>(bgfx::RendererType::Vulkan);
 
-    app.AddExtension<big2::DefaultQuitConditionAppExtension>();
+    big2::Window& window = app_->AddWindow(title_, size_);
+    window.SetClearColor(clear_color_);
+}
+
+void AppWindow::Run() {
+    // Ensure bgfx is up if the caller did not call Init() explicitly.
+    Init();
+
+    app_->AddExtension<big2::DefaultQuitConditionAppExtension>();
 
 #if BIG2_IMGUI_ENABLED
-    app.AddExtension<ImGuiOverlayExtension>();
+    app_->AddExtension<ImGuiOverlayExtension>();
 #endif
 
     // Store the callback in the file-scope static so RenderAppExtension can
     // pick it up during construction inside AddExtension<>().
     s_pending_cb = std::make_shared<RenderCallback>(render_callback_);
-    app.AddExtension<RenderAppExtension>();
+    app_->AddExtension<RenderAppExtension>();
     s_pending_cb.reset();
 
-    big2::Window& window = app.AddWindow(title_, size_);
-    window.SetClearColor(clear_color_);
+    // Window was already created in Init(); update its clear color in case
+    // SetClearColor() was called between Init() and Run().
+    if (!app_->GetWindows().empty()) {
+        app_->GetWindows().front().SetClearColor(clear_color_);
+    }
 
-    app.Run();
+    app_->Run();
 
     // Let the application clean up GPU resources while bgfx is still alive
-    // (the local `app` — and therefore bgfx — is destroyed at the end of
-    // this scope).
+    // (the member `app_` — and therefore bgfx — is destroyed when we reset it).
     if (shutdown_callback_) {
         shutdown_callback_();
     }
+
+    app_.reset();
 }

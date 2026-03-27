@@ -2,12 +2,15 @@ $input v_normal, v_texcoord0, v_world_pos, v_curvature, v_smooth_normal
 
 #include <bgfx_shader.sh>
 
+SAMPLER2D(s_base_color_tex, 0);
+
 uniform vec4 u_light_dir;     // xyz = direction (normalized), w = unused
 uniform vec4 u_base_color;    // rgba base color (lit areas)
 uniform vec4 u_shadow_color;  // rgba shadow color (unlit areas)
 uniform vec4 u_step;          // x = step, y = inner_step, z = curve_step, w = use_smooth_normal
 uniform vec4 u_inner_edge_color; // rgba inner edge color
 uniform vec4 u_view_dir;      // xyz = camera forward direction (normalized), w = unused
+uniform vec4 u_has_texture;   // x > 0.0 means a base color texture is bound
 
 void main()
 {
@@ -32,9 +35,16 @@ void main()
     else
         ndotl = 0.0;
 
+    // Sample the base color texture if available and modulate the colors.
+    vec4 tex_color = vec4(1.0, 1.0, 1.0, 1.0);
+    if (u_has_texture.x > 0.0)
+    {
+        tex_color = texture2D(s_base_color_tex, v_texcoord0);
+    }
+
     // Blend between shadow color and base color based on lighting.
-    vec3 lit = mix(u_shadow_color.rgb, u_base_color.rgb, ndotl);
-    float alpha = mix(u_shadow_color.a, u_base_color.a, ndotl);
+    vec3 lit = mix(u_shadow_color.rgb * tex_color.rgb, u_base_color.rgb * tex_color.rgb, ndotl);
+    float alpha = mix(u_shadow_color.a, u_base_color.a, ndotl) * tex_color.a;
 
     float inner_s = u_step.y;
     float curve_s = u_step.z;

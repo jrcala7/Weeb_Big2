@@ -4,6 +4,7 @@
 #include <string>
 #include <functional>
 #include <glm/glm.hpp>
+#include <memory>
 #include <big2/app.h>
 #include <big2/app_extension_base.h>
 #include <big2/window.h>
@@ -33,6 +34,11 @@ public:
     /// Set the clear color (RGBA, e.g. 0x443355FF).
     void SetClearColor(std::uint32_t rgba);
 
+    /// Initialize bgfx and the underlying windowing system.
+    /// Call this before any bgfx-dependent work (e.g. loading textures).
+    /// If not called explicitly, Run() will call it automatically.
+    void Init();
+
     /// Start the blocking render loop. Returns when the window is closed.
     void Run();
 
@@ -42,4 +48,5 @@ private:
     std::uint32_t clear_color_ = 0x443355FF;
     RenderCallback render_callback_;
     ShutdownCallback shutdown_callback_;
+    std::unique_ptr<big2::App> app_;
 };

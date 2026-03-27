@@ -5,6 +5,8 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+#include "Texture2D.h"
+
 /// @brief Available shader programs for rendering a model.
 enum class ShaderType : std::uint8_t {
     Model = 0,  ///< Original shader (single color + ambient).
@@ -28,6 +30,7 @@ public:
     struct Mesh {
         std::vector<Vertex>   vertices;
         std::vector<uint32_t> indices;
+        Texture2D             base_color_texture;
     };
 
     Model3D() = default;
@@ -91,14 +94,24 @@ public:
 
     [[nodiscard]] const std::vector<Mesh>& GetMeshes() const { return meshes_; }
 
+    /// Release all GPU resources (textures) and clear loaded mesh data.
+    /// Safe to call even if nothing was loaded.
+    void Unload();
+
+    /// Replace the base color texture on every mesh with the texture at the given path.
+    /// @param path  Filesystem path to the replacement image file.
+    /// @return true if the texture was loaded successfully, false otherwise.
+    bool ReplaceAllTextures(const std::string& path);
+
 private:
     void ProcessNode(const struct aiNode* node, const struct aiScene* scene);
-    Mesh ProcessMesh(const struct aiMesh* mesh);
+    Mesh ProcessMesh(const struct aiMesh* mesh, const struct aiMaterial* material, const std::string& directory);
     void ComputeCurvature(Mesh& mesh);
     void ComputeSmoothNormals(Mesh& mesh);
 
     std::vector<Mesh> meshes_;
     std::string error_;
+    std::string directory_;
 
     glm::vec3 position_{0.0f, 0.0f, 0.0f};
     glm::vec3 rotation_{0.0f, 0.0f, 0.0f};

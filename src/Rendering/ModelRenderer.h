@@ -52,5 +52,7 @@ private:
     bgfx::UniformHandle u_view_dir_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_outline_color_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_outline_params_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle s_base_color_tex_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle u_has_texture_ = BGFX_INVALID_HANDLE;
     bgfx::VertexLayout  vertex_layout_;
 };

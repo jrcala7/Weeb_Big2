@@ -72,6 +72,8 @@ bool ModelRenderer::Init() {
     u_view_dir_          = bgfx::createUniform("u_view_dir",          bgfx::UniformType::Vec4);
     u_outline_color_  = bgfx::createUniform("u_outline_color",  bgfx::UniformType::Vec4);
     u_outline_params_ = bgfx::createUniform("u_outline_params", bgfx::UniformType::Vec4);
+    s_base_color_tex_ = bgfx::createUniform("s_base_color_tex", bgfx::UniformType::Sampler);
+    u_has_texture_    = bgfx::createUniform("u_has_texture",    bgfx::UniformType::Vec4);
 
     vertex_layout_
         .begin()
@@ -133,6 +135,14 @@ void ModelRenderer::Shutdown() {
     if (bgfx::isValid(u_outline_params_)) {
         bgfx::destroy(u_outline_params_);
         u_outline_params_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(s_base_color_tex_)) {
+        bgfx::destroy(s_base_color_tex_);
+        s_base_color_tex_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_has_texture_)) {
+        bgfx::destroy(u_has_texture_);
+        u_has_texture_ = BGFX_INVALID_HANDLE;
     }
 }
 
@@ -221,6 +231,14 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
         bgfx::setTransform(glm::value_ptr(mtx));
         bgfx::setVertexBuffer(0, &tvb);
         bgfx::setIndexBuffer(&tib);
+
+        // Bind the base color texture if the mesh has one loaded.
+        float has_texture_arr[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        if (mesh.base_color_texture.IsLoaded()) {
+            bgfx::setTexture(0, s_base_color_tex_, mesh.base_color_texture.GetHandle());
+            has_texture_arr[0] = 1.0f;
+        }
+        bgfx::setUniform(u_has_texture_, has_texture_arr);
 
         bgfx::setState(
             BGFX_STATE_WRITE_RGB
