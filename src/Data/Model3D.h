@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <bgfx/bgfx.h>
 #include <glm/glm.hpp>
 
 #include "Texture2D.h"
@@ -31,7 +32,12 @@ public:
         std::vector<Vertex>   vertices;
         std::vector<uint32_t> indices;
         Texture2D             base_color_texture;
+        bgfx::VertexBufferHandle vbh = BGFX_INVALID_HANDLE;
+        bgfx::IndexBufferHandle  ibh = BGFX_INVALID_HANDLE;
     };
+
+    /// @return The bgfx vertex layout matching the Vertex struct.
+    static bgfx::VertexLayout GetVertexLayout();
 
     Model3D() = default;
 

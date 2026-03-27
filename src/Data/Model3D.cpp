@@ -7,6 +7,16 @@
 #include <assimp/material.h>
 
 void Model3D::Unload() {
+    for (auto& mesh : meshes_) {
+        if (bgfx::isValid(mesh.vbh)) {
+            bgfx::destroy(mesh.vbh);
+            mesh.vbh = BGFX_INVALID_HANDLE;
+        }
+        if (bgfx::isValid(mesh.ibh)) {
+            bgfx::destroy(mesh.ibh);
+            mesh.ibh = BGFX_INVALID_HANDLE;
+        }
+    }
     meshes_.clear();
     error_.clear();
     directory_.clear();
@@ -35,6 +45,26 @@ bool Model3D::Load(const std::string& path) {
     }
 
     ProcessNode(scene->mRootNode, scene);
+
+    // Create persistent GPU vertex/index buffers for each loaded mesh.
+    bgfx::VertexLayout layout = GetVertexLayout();
+    for (auto& mesh : meshes_) {
+        if (mesh.vertices.empty() || mesh.indices.empty()) {
+            continue;
+        }
+        const bgfx::Memory* vb_mem = bgfx::copy(
+            mesh.vertices.data(),
+            static_cast<uint32_t>(mesh.vertices.size() * sizeof(Vertex))
+        );
+        mesh.vbh = bgfx::createVertexBuffer(vb_mem, layout);
+
+        const bgfx::Memory* ib_mem = bgfx::copy(
+            mesh.indices.data(),
+            static_cast<uint32_t>(mesh.indices.size() * sizeof(uint32_t))
+        );
+        mesh.ibh = bgfx::createIndexBuffer(ib_mem, BGFX_BUFFER_INDEX32);
+    }
+
     return !meshes_.empty();
 }
 
@@ -209,4 +239,17 @@ bool Model3D::ReplaceAllTextures(const std::string& path) {
     }
 
     return true;
+}
+
+bgfx::VertexLayout Model3D::GetVertexLayout() {
+    bgfx::VertexLayout layout;
+    layout
+        .begin()
+        .add(bgfx::Attrib::Position,  3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Normal,    3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord1, 1, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord2, 3, bgfx::AttribType::Float)
+        .end();
+    return layout;
 }

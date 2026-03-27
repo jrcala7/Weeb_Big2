@@ -75,15 +75,6 @@ bool ModelRenderer::Init() {
     s_base_color_tex_ = bgfx::createUniform("s_base_color_tex", bgfx::UniformType::Sampler);
     u_has_texture_    = bgfx::createUniform("u_has_texture",    bgfx::UniformType::Vec4);
 
-    vertex_layout_
-        .begin()
-        .add(bgfx::Attrib::Position,  3, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::Normal,    3, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::TexCoord1, 1, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::TexCoord2, 3, bgfx::AttribType::Float)
-        .end();
-
     return true;
 }
 
@@ -210,27 +201,13 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
 
     // ---- Submit each sub-mesh -----------------------------------------------
     for (const auto& mesh : model.GetMeshes()) {
-        if (mesh.vertices.empty() || mesh.indices.empty()) {
+        if (!bgfx::isValid(mesh.vbh) || !bgfx::isValid(mesh.ibh)) {
             continue;
         }
-
-        bgfx::TransientVertexBuffer tvb;
-        bgfx::TransientIndexBuffer  tib;
-
-        uint32_t num_vertices = static_cast<uint32_t>(mesh.vertices.size());
-        uint32_t num_indices  = static_cast<uint32_t>(mesh.indices.size());
-
-        // Pass true for 32-bit index buffer — indices are stored as uint32_t.
-        if (!bgfx::allocTransientBuffers(&tvb, vertex_layout_, num_vertices, &tib, num_indices, true)) {
-            continue;
-        }
-
-        bx::memCopy(tvb.data, mesh.vertices.data(), num_vertices * sizeof(Model3D::Vertex));
-        bx::memCopy(tib.data, mesh.indices.data(),  num_indices  * sizeof(uint32_t));
 
         bgfx::setTransform(glm::value_ptr(mtx));
-        bgfx::setVertexBuffer(0, &tvb);
-        bgfx::setIndexBuffer(&tib);
+        bgfx::setVertexBuffer(0, mesh.vbh);
+        bgfx::setIndexBuffer(mesh.ibh);
 
         // Bind the base color texture if the mesh has one loaded.
         float has_texture_arr[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -253,35 +230,27 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
 
         // ---- Outline pass (inverted hull) -----------------------------------
         if (model.GetShaderType() == ShaderType::Weeb && model.GetOutlineEnabled()) {
-            bgfx::TransientVertexBuffer tvb_outline;
-            bgfx::TransientIndexBuffer  tib_outline;
+            const glm::vec4& outline_color = model.GetOutlineColor();
+            float outline_color_arr[4] = {outline_color.r, outline_color.g, outline_color.b, outline_color.a};
+            bgfx::setUniform(u_outline_color_, outline_color_arr);
 
-            if (bgfx::allocTransientBuffers(&tvb_outline, vertex_layout_, num_vertices, &tib_outline, num_indices, true)) {
-                bx::memCopy(tvb_outline.data, mesh.vertices.data(), num_vertices * sizeof(Model3D::Vertex));
-                bx::memCopy(tib_outline.data, mesh.indices.data(),  num_indices  * sizeof(uint32_t));
+            float outline_params_arr[4] = {model.GetOutlineThickness(), 0.0f, 0.0f, 0.0f};
+            bgfx::setUniform(u_outline_params_, outline_params_arr);
 
-                const glm::vec4& outline_color = model.GetOutlineColor();
-                float outline_color_arr[4] = {outline_color.r, outline_color.g, outline_color.b, outline_color.a};
-                bgfx::setUniform(u_outline_color_, outline_color_arr);
+            bgfx::setTransform(glm::value_ptr(mtx));
+            bgfx::setVertexBuffer(0, mesh.vbh);
+            bgfx::setIndexBuffer(mesh.ibh);
 
-                float outline_params_arr[4] = {model.GetOutlineThickness(), 0.0f, 0.0f, 0.0f};
-                bgfx::setUniform(u_outline_params_, outline_params_arr);
+            bgfx::setState(
+                BGFX_STATE_WRITE_RGB
+                | BGFX_STATE_WRITE_A
+                | BGFX_STATE_WRITE_Z
+                | BGFX_STATE_DEPTH_TEST_LESS
+                | BGFX_STATE_CULL_CCW
+                | BGFX_STATE_MSAA
+            );
 
-                bgfx::setTransform(glm::value_ptr(mtx));
-                bgfx::setVertexBuffer(0, &tvb_outline);
-                bgfx::setIndexBuffer(&tib_outline);
-
-                bgfx::setState(
-                    BGFX_STATE_WRITE_RGB
-                    | BGFX_STATE_WRITE_A
-                    | BGFX_STATE_WRITE_Z
-                    | BGFX_STATE_DEPTH_TEST_LESS
-                    | BGFX_STATE_CULL_CCW
-                    | BGFX_STATE_MSAA
-                );
-
-                bgfx::submit(view_id, outline_program_);
-            }
+            bgfx::submit(view_id, outline_program_);
         }
     }
 }
