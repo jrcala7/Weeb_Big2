@@ -60,7 +60,7 @@ bool Texture2D::Load(const std::string& path) {
         false,  // no mipmaps
         1,      // single layer
         bgfx::TextureFormat::RGBA8,
-        BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP,
+        BGFX_TEXTURE_NONE,
         mem
     );
 

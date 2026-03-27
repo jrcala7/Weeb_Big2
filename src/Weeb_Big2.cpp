@@ -48,6 +48,17 @@ static bool LoadDjSword(Model3D& model) {
 	return true;
 }
 
+/// Load the Sponza palace model.
+/// @param[out] model  The Model3D instance to populate.
+/// @return true on success, false on failure (error available via model.GetError()).
+static bool LoadSponza(Model3D& model) {
+	if (!model.Load("resources/3D/sponza/Sponza.gltf")) {
+		return false;
+	}
+	model.SetScale({1.0f, 1.0f, 1.0f});
+	return true;
+}
+
 int main(std::int32_t, gsl::zstring[]) {
 	AppWindow window("Weeb Big2", {1280, 720});
 	window.SetClearColor(0x443355FF);
@@ -55,13 +66,18 @@ int main(std::int32_t, gsl::zstring[]) {
 	// Initialize bgfx early so that model/texture loading can use the GPU.
 	window.Init();
 
-	// 0 = bunny, 1 = sword
-	constexpr int kModelChoice = 1;
+	// 0 = bunny, 1 = sword, 2 = sponza
+	constexpr int kModelChoice = 2;
 
 	Model3D model;
 	if (kModelChoice == 1) {
 		if (!LoadDjSword(model)) {
 			std::cerr << "Failed to load sword: " << model.GetError() << std::endl;
+			return 1;
+		}
+	} else if (kModelChoice == 2) {
+		if (!LoadSponza(model)) {
+			std::cerr << "Failed to load sponza: " << model.GetError() << std::endl;
 			return 1;
 		}
 	} else {
