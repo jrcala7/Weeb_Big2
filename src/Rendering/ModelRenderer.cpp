@@ -83,6 +83,7 @@ bool ModelRenderer::Init() {
     u_has_normal_map_ = bgfx::createUniform("u_has_normal_map", bgfx::UniformType::Vec4);
     u_roughness_      = bgfx::createUniform("u_roughness",      bgfx::UniformType::Vec4);
     u_metallic_       = bgfx::createUniform("u_metallic",       bgfx::UniformType::Vec4);
+    u_shadow_factor_  = bgfx::createUniform("u_shadow_factor",  bgfx::UniformType::Vec4);
 
     return true;
 }
@@ -171,6 +172,10 @@ void ModelRenderer::Shutdown() {
     if (bgfx::isValid(u_metallic_)) {
         bgfx::destroy(u_metallic_);
         u_metallic_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_shadow_factor_)) {
+        bgfx::destroy(u_shadow_factor_);
+        u_shadow_factor_ = BGFX_INVALID_HANDLE;
     }
 }
 
@@ -291,6 +296,9 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
 
     float metallic_arr[4] = {model.GetMetallic(), 0.0f, 0.0f, 0.0f};
     bgfx::setUniform(u_metallic_, metallic_arr);
+
+    float shadow_factor_arr[4] = {model.GetShadowFactor(), 0.0f, 0.0f, 0.0f};
+    bgfx::setUniform(u_shadow_factor_, shadow_factor_arr);
 
     // ---- Submit each sub-mesh -----------------------------------------------
     for (const auto& mesh : model.GetMeshes()) {

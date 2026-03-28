@@ -105,6 +105,9 @@ public:
     [[nodiscard]] float GetMetallic() const { return metallic_; }
     void SetMetallic(float metallic) { metallic_ = glm::clamp(metallic, 0.0f, 1.0f); }
 
+    [[nodiscard]] float GetShadowFactor() const { return shadow_factor_; }
+    void SetShadowFactor(float shadow_factor) { shadow_factor_ = glm::clamp(shadow_factor, 0.0f, 1.0f); }
+
     // -- Mesh data accessors --------------------------------------------------
 
     [[nodiscard]] const std::vector<Mesh>& GetMeshes() const { return meshes_; }
@@ -145,4 +148,5 @@ private:
     float outline_thickness_ = 0.02f;
     float roughness_ = 0.5f;
     float metallic_ = 0.0f;
+    float shadow_factor_ = 0.5f;
 };

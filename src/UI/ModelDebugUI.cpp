@@ -85,6 +85,11 @@ void DrawModelDebugUI(Model3D& model) {
                 model.SetInnerEdgeColor(inner_edge_color);
             }
 
+            float shadow_factor = model.GetShadowFactor();
+            if (ImGui::SliderFloat("Shadow Factor", &shadow_factor, 0.0f, 1.0f)) {
+                model.SetShadowFactor(shadow_factor);
+            }
+
             ImGui::Separator();
             ImGui::Text("Outline");
 

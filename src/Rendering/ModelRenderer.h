@@ -64,4 +64,5 @@ private:
     bgfx::UniformHandle u_has_normal_map_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_roughness_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_metallic_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle u_shadow_factor_ = BGFX_INVALID_HANDLE;
 };

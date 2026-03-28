@@ -18,6 +18,7 @@ uniform vec4 u_has_texture;      // x > 0.0 means a base color texture is bound
 uniform vec4 u_has_normal_map;   // x > 0.0 means a normal map texture is bound
 uniform vec4 u_roughness;        // x = roughness [0..1]
 uniform vec4 u_metallic;         // x = metallic [0..1]
+uniform vec4 u_shadow_factor;    // x = shadow_factor [0..1]
 
 // PBR constants
 const float PI = 3.14159265359;
@@ -167,8 +168,7 @@ void main()
         float ndotl = max(dot(v_normal, lightDir), 0.0);
         ndotl = stepCheck(ndotl, u_step.x);
 
-        vec3 baseColor = mix(u_shadow_color.rgb * (tex_color.rgb * 0.5), u_base_color.rgb * tex_color.rgb, ndotl);
-
+        vec3 baseColor = mix(u_shadow_color.rgb * (tex_color.rgb * (1.0 - u_shadow_factor.x)), u_base_color.rgb * tex_color.rgb, ndotl);
 
             pbr_color += calculatePBR(v_world_pos, normal, viewDir, lightDir, baseColor, roughness, metallic, lightColor, intensity);
     }
