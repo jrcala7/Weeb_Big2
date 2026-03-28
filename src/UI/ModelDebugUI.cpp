@@ -36,6 +36,19 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetShadowColor(shadow_color);
         }
 
+        ImGui::Separator();
+        ImGui::Text("PBR Properties");
+
+        float roughness = model.GetRoughness();
+        if (ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f)) {
+            model.SetRoughness(roughness);
+        }
+
+        float metallic = model.GetMetallic();
+        if (ImGui::SliderFloat("Metallic", &metallic, 0.0f, 1.0f)) {
+            model.SetMetallic(metallic);
+        }
+
         float step = model.GetStep();
         if (ImGui::DragFloat("Step", &step, 0.01f, 0.0f, 1.0f)) {
             model.SetStep(step);

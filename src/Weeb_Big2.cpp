@@ -67,7 +67,7 @@ int main(std::int32_t, gsl::zstring[]) {
 	window.Init();
 
 	// 0 = bunny, 1 = sword, 2 = sponza
-	constexpr int kModelChoice = 2;
+	constexpr int kModelChoice = 1;
 
 	Model3D model;
 	if (kModelChoice == 1) {
@@ -90,13 +90,18 @@ int main(std::int32_t, gsl::zstring[]) {
 	// Place the camera so it faces the bunny at the origin.
 	// Forward at yaw=0 is +Z, so the camera sits on -Z looking toward it.
 	Camera camera(
-		{0.0f, 0.8f, -2.5f},  // position  (slightly above center, behind on Z)
-		{0.0f, 0.0f, 0.0f},   // rotation  (looking straight +Z)
-		60.0f,                 // fov
-		1280.0f / 720.0f       // aspect ratio matching the window
+		{0.0f, 0.8f, -2.5f},  
+		{0.0f, 0.0f, 0.0f},   
+		60.0f,                
+		1280.0f / 720.0f,
+		0.1f,
+		3000.0f
 	);
 
 	DirectionalLight light({-0.5f, -1.0f, -0.5f});
+
+	LightManager light_manager;
+	light_manager.AddLight(light);
 
 	ModelRenderer renderer;
 
@@ -111,12 +116,12 @@ int main(std::int32_t, gsl::zstring[]) {
 			BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH,
 			0x443355FF, 1.0f, 0);
 		bgfx::touch(win.GetView());
-		renderer.Render(win.GetView(), model, camera, light);
+		renderer.Render(win.GetView(), model, camera, light_manager);
 
 #if BIG2_IMGUI_ENABLED
 		BIG2_SCOPE_VAR(big2::ImGuiFrameScoped) {
 			DrawCameraDebugUI(camera);
-			DrawLightDebugUI(light);
+			DrawLightManagerDebugUI(light_manager);
 			DrawModelDebugUI(model);
 		}
 #endif

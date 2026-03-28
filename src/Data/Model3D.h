@@ -96,6 +96,12 @@ public:
     [[nodiscard]] float GetOutlineThickness() const { return outline_thickness_; }
     void SetOutlineThickness(float thickness) { outline_thickness_ = thickness; }
 
+    [[nodiscard]] float GetRoughness() const { return roughness_; }
+    void SetRoughness(float roughness) { roughness_ = glm::clamp(roughness, 0.0f, 1.0f); }
+
+    [[nodiscard]] float GetMetallic() const { return metallic_; }
+    void SetMetallic(float metallic) { metallic_ = glm::clamp(metallic, 0.0f, 1.0f); }
+
     // -- Mesh data accessors --------------------------------------------------
 
     [[nodiscard]] const std::vector<Mesh>& GetMeshes() const { return meshes_; }
@@ -133,4 +139,6 @@ private:
     bool outline_enabled_ = true;
     glm::vec4 outline_color_{0.0f, 0.0f, 0.0f, 1.0f};
     float outline_thickness_ = 0.02f;
+    float roughness_ = 0.5f;
+    float metallic_ = 0.0f;
 };

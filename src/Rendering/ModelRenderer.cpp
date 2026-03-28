@@ -4,6 +4,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <big2/bgfx/embedded_shader.h>
 #include <generated/shaders/Weeb_Big2/all.h>
+#include <string>
 
 #include "Data/Model3D.h"
 #include "Data/Camera.h"
@@ -63,7 +64,11 @@ bool ModelRenderer::Init() {
         return false;
     }
 
-    u_light_dir_    = bgfx::createUniform("u_light_dir",    bgfx::UniformType::Vec4);
+    // Create uniforms for multiple lights
+    u_light_dirs_    = bgfx::createUniform("u_light_dirs",    bgfx::UniformType::Vec4, MAX_LIGHTS);
+    u_light_colors_  = bgfx::createUniform("u_light_colors",  bgfx::UniformType::Vec4, MAX_LIGHTS);
+    u_light_intensities_ = bgfx::createUniform("u_light_intensities", bgfx::UniformType::Vec4, MAX_LIGHTS);
+    u_num_lights_   = bgfx::createUniform("u_num_lights", bgfx::UniformType::Vec4);
     u_color_        = bgfx::createUniform("u_color",        bgfx::UniformType::Vec4);
     u_base_color_   = bgfx::createUniform("u_base_color",   bgfx::UniformType::Vec4);
     u_shadow_color_ = bgfx::createUniform("u_shadow_color", bgfx::UniformType::Vec4);
@@ -74,6 +79,8 @@ bool ModelRenderer::Init() {
     u_outline_params_ = bgfx::createUniform("u_outline_params", bgfx::UniformType::Vec4);
     s_base_color_tex_ = bgfx::createUniform("s_base_color_tex", bgfx::UniformType::Sampler);
     u_has_texture_    = bgfx::createUniform("u_has_texture",    bgfx::UniformType::Vec4);
+    u_roughness_      = bgfx::createUniform("u_roughness",      bgfx::UniformType::Vec4);
+    u_metallic_       = bgfx::createUniform("u_metallic",       bgfx::UniformType::Vec4);
 
     return true;
 }
@@ -91,9 +98,21 @@ void ModelRenderer::Shutdown() {
         bgfx::destroy(outline_program_);
         outline_program_ = BGFX_INVALID_HANDLE;
     }
-    if (bgfx::isValid(u_light_dir_)) {
-        bgfx::destroy(u_light_dir_);
-        u_light_dir_ = BGFX_INVALID_HANDLE;
+    if (bgfx::isValid(u_light_dirs_)) {
+        bgfx::destroy(u_light_dirs_);
+        u_light_dirs_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_light_colors_)) {
+        bgfx::destroy(u_light_colors_);
+        u_light_colors_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_light_intensities_)) {
+        bgfx::destroy(u_light_intensities_);
+        u_light_intensities_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_num_lights_)) {
+        bgfx::destroy(u_num_lights_);
+        u_num_lights_ = BGFX_INVALID_HANDLE;
     }
     if (bgfx::isValid(u_color_)) {
         bgfx::destroy(u_color_);
@@ -135,6 +154,14 @@ void ModelRenderer::Shutdown() {
         bgfx::destroy(u_has_texture_);
         u_has_texture_ = BGFX_INVALID_HANDLE;
     }
+    if (bgfx::isValid(u_roughness_)) {
+        bgfx::destroy(u_roughness_);
+        u_roughness_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_metallic_)) {
+        bgfx::destroy(u_metallic_);
+        u_metallic_ = BGFX_INVALID_HANDLE;
+    }
 }
 
 bool ModelRenderer::IsInitialized() const {
@@ -145,7 +172,7 @@ bool ModelRenderer::IsInitialized() const {
 void ModelRenderer::Render(bgfx::ViewId view_id,
                            const Model3D& model,
                            const Camera& camera,
-                           const DirectionalLight& light) {
+                           const LightManager& lights) {
     if (!IsInitialized() || !model.IsLoaded()) {
         return;
     }
@@ -163,10 +190,59 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
     mtx = glm::rotate(mtx, glm::radians(model.GetRotation().z), glm::vec3(0, 0, 1));
     mtx = glm::scale(mtx, model.GetScale());
 
-    // ---- Uniforms -----------------------------------------------------------
-    glm::vec3 dir = glm::normalize(light.GetDirection());
-    float light_dir_arr[4] = {dir.x, dir.y, dir.z, 0.0f};
-    bgfx::setUniform(u_light_dir_, light_dir_arr);
+    // ---- Light Uniforms -----------------------------------------------------
+    int num_lights = static_cast<int>(lights.GetLightCount());
+    num_lights = num_lights > MAX_LIGHTS ? MAX_LIGHTS : num_lights;
+
+    // Prepare light data arrays
+    float light_dirs[MAX_LIGHTS * 4];
+    float light_colors[MAX_LIGHTS * 4];
+    float light_intensities[MAX_LIGHTS * 4];
+
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        if (i < num_lights) {
+            glm::vec3 dir = glm::normalize(lights.GetLight(i).GetDirection());
+            light_dirs[i * 4 + 0] = dir.x;
+            light_dirs[i * 4 + 1] = dir.y;
+            light_dirs[i * 4 + 2] = dir.z;
+            light_dirs[i * 4 + 3] = 0.0f;
+
+            glm::vec3 color = lights.GetLight(i).GetColor();
+            light_colors[i * 4 + 0] = color.r;
+            light_colors[i * 4 + 1] = color.g;
+            light_colors[i * 4 + 2] = color.b;
+            light_colors[i * 4 + 3] = 0.0f;
+
+            float intensity = lights.GetLight(i).GetIntensity();
+            light_intensities[i * 4 + 0] = intensity;
+            light_intensities[i * 4 + 1] = 0.0f;
+            light_intensities[i * 4 + 2] = 0.0f;
+            light_intensities[i * 4 + 3] = 0.0f;
+        } else {
+            // Zero out unused light slots
+            light_dirs[i * 4 + 0] = 0.0f;
+            light_dirs[i * 4 + 1] = 0.0f;
+            light_dirs[i * 4 + 2] = 0.0f;
+            light_dirs[i * 4 + 3] = 0.0f;
+
+            light_colors[i * 4 + 0] = 0.0f;
+            light_colors[i * 4 + 1] = 0.0f;
+            light_colors[i * 4 + 2] = 0.0f;
+            light_colors[i * 4 + 3] = 0.0f;
+
+            light_intensities[i * 4 + 0] = 0.0f;
+            light_intensities[i * 4 + 1] = 0.0f;
+            light_intensities[i * 4 + 2] = 0.0f;
+            light_intensities[i * 4 + 3] = 0.0f;
+        }
+    }
+
+    bgfx::setUniform(u_light_dirs_, light_dirs, MAX_LIGHTS);
+    bgfx::setUniform(u_light_colors_, light_colors, MAX_LIGHTS);
+    bgfx::setUniform(u_light_intensities_, light_intensities, MAX_LIGHTS);
+
+    float num_lights_arr[4] = {static_cast<float>(num_lights), 0.0f, 0.0f, 0.0f};
+    bgfx::setUniform(u_num_lights_, num_lights_arr);
 
     bgfx::ProgramHandle active_program = BGFX_INVALID_HANDLE;
 
@@ -198,6 +274,13 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
 
         active_program = model_program_;
     }
+
+    // ---- PBR Uniforms -------------------------------------------------------
+    float roughness_arr[4] = {model.GetRoughness(), 0.0f, 0.0f, 0.0f};
+    bgfx::setUniform(u_roughness_, roughness_arr);
+
+    float metallic_arr[4] = {model.GetMetallic(), 0.0f, 0.0f, 0.0f};
+    bgfx::setUniform(u_metallic_, metallic_arr);
 
     // ---- Submit each sub-mesh -----------------------------------------------
     for (const auto& mesh : model.GetMeshes()) {
