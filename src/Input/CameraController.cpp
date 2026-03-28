@@ -11,6 +11,7 @@ void CameraController::Update(Camera& camera, big2::Window& window, float dt) {
     }
 
     glm::vec3 movement(0.0f);
+	float multiplier = 1.0f;
 
     // WASD for movement
     if (glfwGetKey(glfwWindow, GLFW_KEY_W) == GLFW_PRESS) {
@@ -34,25 +35,34 @@ void CameraController::Update(Camera& camera, big2::Window& window, float dt) {
         movement += camera.GetUp();
     }
 
+    //"Sprint"
+    if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        multiplier = 4.0f;
+    }
+
     // Apply movement
     if (glm::length(movement) > 0.0f) {
-        movement = glm::normalize(movement) * move_speed_ * dt;
+        movement = glm::normalize(movement) * move_speed_ * multiplier * dt;
         camera.SetPosition(camera.GetPosition() + movement);
     }
 
     // Arrow keys for rotation
     glm::vec3 rotation = camera.GetRotation();
 
-    if (glfwGetKey(glfwWindow, GLFW_KEY_UP) == GLFW_PRESS) {
+    if (glfwGetKey(glfwWindow, GLFW_KEY_UP) == GLFW_PRESS || 
+        glfwGetKey(glfwWindow, GLFW_KEY_I) == GLFW_PRESS) {
         rotation.x += rotation_speed_ * dt;  // pitch up
     }
-    if (glfwGetKey(glfwWindow, GLFW_KEY_DOWN) == GLFW_PRESS) {
+    if (glfwGetKey(glfwWindow, GLFW_KEY_DOWN) == GLFW_PRESS || 
+        glfwGetKey(glfwWindow, GLFW_KEY_K) == GLFW_PRESS) {
         rotation.x -= rotation_speed_ * dt;  // pitch down
     }
-    if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT) == GLFW_PRESS) {
+    if (glfwGetKey(glfwWindow, GLFW_KEY_RIGHT) == GLFW_PRESS || 
+        glfwGetKey(glfwWindow, GLFW_KEY_L) == GLFW_PRESS) {
         rotation.y -= rotation_speed_ * dt;  // yaw left
     }
-    if (glfwGetKey(glfwWindow, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+    if (glfwGetKey(glfwWindow, GLFW_KEY_LEFT) == GLFW_PRESS || 
+        glfwGetKey(glfwWindow, GLFW_KEY_J) == GLFW_PRESS) {
         rotation.y += rotation_speed_ * dt;  // yaw right
     }
 
