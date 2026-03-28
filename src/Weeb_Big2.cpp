@@ -69,6 +69,8 @@ int main(std::int32_t, gsl::zstring[]) {
 
 	// 0 = bunny, 1 = sword, 2 = sponza
 	constexpr int kModelChoice = 2;
+	glm::vec3 cameraPos = { 0,0,0 };
+	glm::vec3 cameraRot = { 0,0,0 };
 
 	Model3D model;
 	if (kModelChoice == 1) {
@@ -77,6 +79,8 @@ int main(std::int32_t, gsl::zstring[]) {
 			return 1;
 		}
 	} else if (kModelChoice == 2) {
+		cameraPos = { -18.0f, 775.0f, 13.0f };
+		cameraRot = { -14.0f, 100.0f, 0.0f };
 		if (!LoadSponza(model)) {
 			std::cerr << "Failed to load sponza: " << model.GetError() << std::endl;
 			return 1;
@@ -91,8 +95,8 @@ int main(std::int32_t, gsl::zstring[]) {
 	// Place the camera so it faces the bunny at the origin.
 	// Forward at yaw=0 is +Z, so the camera sits on -Z looking toward it.
 	Camera camera(
-		{0.0f, 0.8f, -2.5f},  
-		{0.0f, 0.0f, 0.0f},   
+		cameraPos,  
+		cameraRot,   
 		60.0f,                
 		1280.0f / 720.0f,
 		0.1f,

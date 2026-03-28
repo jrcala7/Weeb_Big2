@@ -66,7 +66,7 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 {
     float NdotV = max(dot(N, V), 0.0);
     float NdotL = max(dot(N, L), 0.0);
-    NdotL = stepCheck(NdotL, u_step.x);
+    //NdotL = stepCheck(NdotL, u_step.x);
 
     float ggx2 = GeometrySchlickGGX(NdotV, roughness);
     float ggx1 = GeometrySchlickGGX(NdotL, roughness);
@@ -164,15 +164,16 @@ void main()
         vec3 lightColor = u_light_colors[i].rgb;
         float intensity = u_light_intensities[i].x;
 
-        float ndotl = max(dot(normal, lightDir), 0.0);
+        float ndotl = max(dot(v_normal, lightDir), 0.0);
         ndotl = stepCheck(ndotl, u_step.x);
 
-        vec3 baseColor = mix(u_shadow_color.rgb * tex_color.rgb, u_base_color.rgb * tex_color.rgb, ndotl);
+        vec3 baseColor = mix(u_shadow_color.rgb * (tex_color.rgb * 0.5), u_base_color.rgb * tex_color.rgb, ndotl);
 
-        pbr_color += calculatePBR(v_world_pos, normal, viewDir, lightDir, baseColor, roughness, metallic, lightColor, intensity);
+
+            pbr_color += calculatePBR(v_world_pos, normal, viewDir, lightDir, baseColor, roughness, metallic, lightColor, intensity);
     }
 
-    float vdotl = max(dot(normal, -u_view_dir.xyz), 0.0);
+    float vdotl = max(dot(v_normal, -u_view_dir.xyz), 0.0);
     float alpha = u_base_color.a * tex_color.a;
 
     float inner_s = u_step.y;
