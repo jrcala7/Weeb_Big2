@@ -15,6 +15,7 @@
 #include "Data/Camera.h"
 #include "Data/Light.h"
 #include "Rendering/ModelRenderer.h"
+#include "Input/CameraController.h"
 #include "UI/CameraDebugUI.h"
 #include "UI/LightDebugUI.h"
 #include "UI/ModelDebugUI.h"
@@ -67,7 +68,7 @@ int main(std::int32_t, gsl::zstring[]) {
 	window.Init();
 
 	// 0 = bunny, 1 = sword, 2 = sponza
-	constexpr int kModelChoice = 1;
+	constexpr int kModelChoice = 2;
 
 	Model3D model;
 	if (kModelChoice == 1) {
@@ -104,12 +105,16 @@ int main(std::int32_t, gsl::zstring[]) {
 	light_manager.AddLight(light);
 
 	ModelRenderer renderer;
+	CameraController camera_controller;
 
-	window.SetRenderCallback([&](big2::Window& win, float /*dt*/) {
+	window.SetRenderCallback([&](big2::Window& win, float dt) {
 		// Lazy-init: ModelRenderer needs bgfx to be up, which happens inside Run().
 		if (!renderer.IsInitialized()) {
 			renderer.Init();
 		}
+
+		// Update camera with keyboard input
+		camera_controller.Update(camera, win, dt);
 
 		// Clear both color and depth each frame so the depth test works.
 		bgfx::setViewClear(win.GetView(),

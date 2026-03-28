@@ -1,8 +1,9 @@
-$input v_normal, v_texcoord0, v_world_pos, v_curvature, v_smooth_normal
+$input v_normal, v_texcoord0, v_world_pos, v_curvature, v_smooth_normal, v_tangent, v_bitangent
 
 #include <bgfx_shader.sh>
 
 SAMPLER2D(s_base_color_tex, 0);
+SAMPLER2D(s_normal_map_tex, 1);
 
 uniform vec4 u_light_dirs[4];    // xyz = direction (normalized), w = unused
 uniform vec4 u_light_colors[4];  // rgb = light color, a = unused
@@ -14,6 +15,7 @@ uniform vec4 u_step;             // x = step, y = inner_step, z = curve_step, w 
 uniform vec4 u_inner_edge_color; // rgba inner edge color
 uniform vec4 u_view_dir;         // xyz = camera forward direction (normalized), w = unused
 uniform vec4 u_has_texture;      // x > 0.0 means a base color texture is bound
+uniform vec4 u_has_normal_map;   // x > 0.0 means a normal map texture is bound
 uniform vec4 u_roughness;        // x = roughness [0..1]
 uniform vec4 u_metallic;         // x = metallic [0..1]
 
@@ -99,15 +101,42 @@ vec3 calculatePBR(vec3 fragPos, vec3 normal, vec3 viewDir, vec3 lightDir,
     return (kD * baseColor / PI + specular) * radiance * NdotL;
 }
 
+// Sample and apply normal map to the surface normal
+vec3 sampleNormalMap(vec3 normal, vec3 tangent, vec3 bitangent, vec2 texCoord)
+{
+    if (u_has_normal_map.x <= 0.0)
+    {
+        return normalize(normal);
+    }
+
+    // Sample the normal map (assuming it's stored in RGB format)
+    vec3 sampledNormal = texture2D(s_normal_map_tex, texCoord).rgb;
+
+    // Convert from [0, 1] to [-1, 1]
+    sampledNormal = sampledNormal * 2.0 - 1.0;
+
+    // Normalize the input vectors
+    vec3 N = normalize(normal);
+    vec3 T = normalize(tangent);
+    vec3 B = normalize(bitangent);
+
+    // Transform normal from tangent space to world space
+    // Using the formula: normal = T*sampledNormal.x + B*sampledNormal.y + N*sampledNormal.z
+    vec3 worldNormal = T * sampledNormal.x + B * sampledNormal.y + N * sampledNormal.z;
+    return normalize(worldNormal);
+}
+
 void main()
 {
-    vec3 normal = normalize(v_normal);
+    vec3 normal = v_normal;
 
     float use_smooth = u_step.w;
     if(use_smooth > 0.0)
     {
         normal = normalize(v_smooth_normal);
     }
+
+    normal = sampleNormalMap(normal, v_tangent, v_bitangent, v_texcoord0);
 
     vec3 viewDir = normalize(u_view_dir.xyz);
 

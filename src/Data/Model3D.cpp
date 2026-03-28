@@ -75,6 +75,7 @@ void Model3D::ProcessNode(const aiNode* node, const aiScene* scene) {
         meshes_.push_back(ProcessMesh(mesh, material, directory_));
         ComputeCurvature(meshes_.back());
         ComputeSmoothNormals(meshes_.back());
+        ComputeTangentBitangent(meshes_.back());
     }
 
     for (unsigned int i = 0; i < node->mNumChildren; ++i) {
@@ -126,6 +127,12 @@ Model3D::Mesh Model3D::ProcessMesh(const aiMesh* mesh, const aiMaterial* materia
         if (material->GetTexture(aiTextureType_DIFFUSE, 0, &tex_path) == aiReturn_SUCCESS) {
             std::string full_path = directory + tex_path.C_Str();
             result.base_color_texture.Load(full_path);
+        }
+
+        // Load the normal map texture from the material, if any.
+        if (material->GetTexture(aiTextureType_NORMALS, 0, &tex_path) == aiReturn_SUCCESS) {
+            std::string full_path = directory + tex_path.C_Str();
+            result.normal_map_texture.Load(full_path);
         }
     }
 
@@ -241,6 +248,73 @@ bool Model3D::ReplaceAllTextures(const std::string& path) {
     return true;
 }
 
+void Model3D::ComputeTangentBitangent(Mesh& mesh) {
+    const size_t vertex_count = mesh.vertices.size();
+    if (vertex_count == 0) {
+        return;
+    }
+
+    // Initialize tangent and bitangent to zero for accumulation.
+    std::vector<glm::vec3> tangent_accum(vertex_count, glm::vec3(0.0f));
+    std::vector<glm::vec3> bitangent_accum(vertex_count, glm::vec3(0.0f));
+
+    // For each triangle, compute tangent and bitangent vectors.
+    for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
+        uint32_t i0 = mesh.indices[i];
+        uint32_t i1 = mesh.indices[i + 1];
+        uint32_t i2 = mesh.indices[i + 2];
+
+        const glm::vec3& p0 = mesh.vertices[i0].position;
+        const glm::vec3& p1 = mesh.vertices[i1].position;
+        const glm::vec3& p2 = mesh.vertices[i2].position;
+
+        const glm::vec2& uv0 = mesh.vertices[i0].uv;
+        const glm::vec2& uv1 = mesh.vertices[i1].uv;
+        const glm::vec2& uv2 = mesh.vertices[i2].uv;
+
+        glm::vec3 edge1 = p1 - p0;
+        glm::vec3 edge2 = p2 - p0;
+
+        glm::vec2 duv1 = uv1 - uv0;
+        glm::vec2 duv2 = uv2 - uv0;
+
+        float denom = duv1.x * duv2.y - duv2.x * duv1.y;
+        if (std::abs(denom) < 1e-6f) {
+            // Degenerate UV triangle, skip tangent computation for this face
+            continue;
+        }
+
+        float f = 1.0f / denom;
+
+        glm::vec3 tangent = (edge1 * duv2.y - edge2 * duv1.y) * f;
+        glm::vec3 bitangent = (edge2 * duv1.x - edge1 * duv2.x) * f;
+
+        // Accumulate for each vertex of the triangle
+        tangent_accum[i0] += tangent;
+        tangent_accum[i1] += tangent;
+        tangent_accum[i2] += tangent;
+
+        bitangent_accum[i0] += bitangent;
+        bitangent_accum[i1] += bitangent;
+        bitangent_accum[i2] += bitangent;
+    }
+
+    // Orthogonalize and normalize tangent and bitangent for each vertex.
+    for (size_t v = 0; v < vertex_count; ++v) {
+        const glm::vec3& normal = mesh.vertices[v].normal;
+        glm::vec3 tangent = tangent_accum[v];
+
+        // Gram-Schmidt orthogonalization
+        tangent = glm::normalize(tangent - normal * glm::dot(normal, tangent));
+
+        // Ensure handedness (bitangent direction relative to tangent and normal)
+        float handedness = glm::dot(glm::cross(normal, tangent), bitangent_accum[v]) < 0.0f ? -1.0f : 1.0f;
+
+        mesh.vertices[v].tangent = tangent;
+        mesh.vertices[v].bitangent = handedness * glm::normalize(glm::cross(normal, tangent));
+    }
+}
+
 bgfx::VertexLayout Model3D::GetVertexLayout() {
     bgfx::VertexLayout layout;
     layout
@@ -250,6 +324,8 @@ bgfx::VertexLayout Model3D::GetVertexLayout() {
         .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
         .add(bgfx::Attrib::TexCoord1, 1, bgfx::AttribType::Float)
         .add(bgfx::Attrib::TexCoord2, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord3, 3, bgfx::AttribType::Float)  // tangent
+        .add(bgfx::Attrib::TexCoord4, 3, bgfx::AttribType::Float)  // bitangent
         .end();
     return layout;
 }

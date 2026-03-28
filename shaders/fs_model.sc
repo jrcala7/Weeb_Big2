@@ -1,8 +1,9 @@
-$input v_normal, v_texcoord0, v_world_pos, v_curvature, v_smooth_normal
+$input v_normal, v_texcoord0, v_world_pos, v_curvature, v_smooth_normal, v_tangent, v_bitangent
 
 #include <bgfx_shader.sh>
 
 SAMPLER2D(s_base_color_tex, 0);
+SAMPLER2D(s_normal_map_tex, 1);
 
 uniform vec4 u_light_dirs[4];    // xyz = direction (normalized), w = unused
 uniform vec4 u_light_colors[4];  // rgb = light color, a = unused
@@ -10,6 +11,7 @@ uniform vec4 u_light_intensities[4]; // x = intensity, yzw = unused
 uniform vec4 u_num_lights;       // x = number of active lights
 uniform vec4 u_color;            // rgba base color
 uniform vec4 u_has_texture;      // x > 0.0 means a base color texture is bound
+uniform vec4 u_has_normal_map;   // x > 0.0 means a normal map texture is bound
 uniform vec4 u_roughness;        // x = roughness [0..1]
 uniform vec4 u_metallic;         // x = metallic [0..1]
 
@@ -59,6 +61,31 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
+// Sample and apply normal map to the surface normal
+vec3 sampleNormalMap(vec3 normal, vec3 tangent, vec3 bitangent, vec2 texCoord)
+{
+    if (u_has_normal_map.x <= 0.0)
+    {
+        return normalize(normal);
+    }
+
+    // Sample the normal map (assuming it's stored in RGB format)
+    vec3 sampledNormal = texture2D(s_normal_map_tex, texCoord).rgb;
+
+    // Convert from [0, 1] to [-1, 1]
+    sampledNormal = sampledNormal * 2.0 - 1.0;
+
+    // Normalize the input vectors
+    vec3 N = normalize(normal);
+    vec3 T = normalize(tangent);
+    vec3 B = normalize(bitangent);
+
+    // Transform normal from tangent space to world space
+    // Using the formula: normal = T*sampledNormal.x + B*sampledNormal.y + N*sampledNormal.z
+    vec3 worldNormal = T * sampledNormal.x + B * sampledNormal.y + N * sampledNormal.z;
+    return normalize(worldNormal);
+}
+
 // Cook-Torrance BRDF
 vec3 calculatePBR(vec3 fragPos, vec3 normal, vec3 viewDir, vec3 lightDir, 
                   vec3 baseColor, float roughness, float metallic, vec3 lightColor, float intensity)
@@ -87,7 +114,7 @@ vec3 calculatePBR(vec3 fragPos, vec3 normal, vec3 viewDir, vec3 lightDir,
 
 void main()
 {
-    vec3 normal = normalize(v_normal);
+    vec3 normal = sampleNormalMap(v_normal, v_tangent, v_bitangent, v_texcoord0);
     vec3 viewDir = normalize(-v_world_pos);  // Simple view direction approximation
 
     // Calculate combined PBR lighting from all active lights

@@ -25,6 +25,8 @@ public:
         glm::vec2 uv{0.0f};
         float     curvature{0.0f};
         glm::vec3 smooth_normal{0.0f};
+        glm::vec3 tangent{0.0f};
+        glm::vec3 bitangent{0.0f};
     };
 
     /// A single sub-mesh inside the model.
@@ -32,6 +34,7 @@ public:
         std::vector<Vertex>   vertices;
         std::vector<uint32_t> indices;
         Texture2D             base_color_texture;
+        Texture2D             normal_map_texture;
         bgfx::VertexBufferHandle vbh = BGFX_INVALID_HANDLE;
         bgfx::IndexBufferHandle  ibh = BGFX_INVALID_HANDLE;
     };
@@ -120,6 +123,7 @@ private:
     Mesh ProcessMesh(const struct aiMesh* mesh, const struct aiMaterial* material, const std::string& directory);
     void ComputeCurvature(Mesh& mesh);
     void ComputeSmoothNormals(Mesh& mesh);
+    void ComputeTangentBitangent(Mesh& mesh);
 
     std::vector<Mesh> meshes_;
     std::string error_;

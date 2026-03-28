@@ -37,6 +37,13 @@ void DrawModelDebugUI(Model3D& model) {
         }
 
         ImGui::Separator();
+        static const char* kShaderNames[] = { "Model", "Weeb" };
+        int current = static_cast<int>(model.GetShaderType());
+        if (ImGui::Combo("Shader", &current, kShaderNames, IM_ARRAYSIZE(kShaderNames))) {
+            model.SetShaderType(static_cast<ShaderType>(current));
+        }
+
+        ImGui::Separator();
         ImGui::Text("PBR Properties");
 
         float roughness = model.GetRoughness();
@@ -49,39 +56,35 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetMetallic(metallic);
         }
 
-        float step = model.GetStep();
-        if (ImGui::DragFloat("Step", &step, 0.01f, 0.0f, 1.0f)) {
-            model.SetStep(step);
-        }
-
-        float inner_step = model.GetInnerStep();
-        if (ImGui::DragFloat("Inner Step", &inner_step, 0.01f, 0.0f, 1.0f)) {
-            model.SetInnerStep(inner_step);
-        }
-
-        float curve_step = model.GetCurveStep();
-        if (ImGui::DragFloat("Curve Step", &curve_step, 0.01f, 0.0f, 1.0f)) {
-            model.SetCurveStep(curve_step);
-        }
-
-        bool use_smooth_normal = model.GetUseSmoothNormal();
-        if (ImGui::Checkbox("Use Smooth Normal", &use_smooth_normal)) {
-            model.SetUseSmoothNormal(use_smooth_normal);
-        }
-
-        glm::vec4 inner_edge_color = model.GetInnerEdgeColor();
-        if (ImGui::ColorEdit4("Inner Edge Color", &inner_edge_color.x)) {
-            model.SetInnerEdgeColor(inner_edge_color);
-        }
-
-        ImGui::Separator();
-        static const char* kShaderNames[] = { "Model", "Weeb" };
-        int current = static_cast<int>(model.GetShaderType());
-        if (ImGui::Combo("Shader", &current, kShaderNames, IM_ARRAYSIZE(kShaderNames))) {
-            model.SetShaderType(static_cast<ShaderType>(current));
-        }
-
         if (model.GetShaderType() == ShaderType::Weeb) {
+            ImGui::Separator();
+            ImGui::Text("Anime Properties");
+
+            float step = model.GetStep();
+            if (ImGui::DragFloat("Step", &step, 0.01f, 0.0f, 1.0f)) {
+                model.SetStep(step);
+            }
+
+            float inner_step = model.GetInnerStep();
+            if (ImGui::DragFloat("Inner Step", &inner_step, 0.01f, 0.0f, 1.0f)) {
+                model.SetInnerStep(inner_step);
+            }
+
+            float curve_step = model.GetCurveStep();
+            if (ImGui::DragFloat("Curve Step", &curve_step, 0.01f, 0.0f, 1.0f)) {
+                model.SetCurveStep(curve_step);
+            }
+
+            bool use_smooth_normal = model.GetUseSmoothNormal();
+            if (ImGui::Checkbox("Use Smooth Normal", &use_smooth_normal)) {
+                model.SetUseSmoothNormal(use_smooth_normal);
+            }
+
+            glm::vec4 inner_edge_color = model.GetInnerEdgeColor();
+            if (ImGui::ColorEdit4("Inner Edge Color", &inner_edge_color.x)) {
+                model.SetInnerEdgeColor(inner_edge_color);
+            }
+
             ImGui::Separator();
             ImGui::Text("Outline");
 

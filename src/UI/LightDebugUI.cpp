@@ -86,9 +86,6 @@ void DrawLightManagerDebugUI(LightManager& light_manager) {
 
             ImGui::PopID();
         }
-
-        ImGui::Separator();
-        ImGui::TextWrapped("Tip: Up to 4 directional lights are supported. Adjust intensity and color for each light.");
     }
     ImGui::End();
 #endif

@@ -60,6 +60,8 @@ private:
     bgfx::UniformHandle u_outline_params_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle s_base_color_tex_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_has_texture_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle s_normal_map_tex_ = BGFX_INVALID_HANDLE;
+    bgfx::UniformHandle u_has_normal_map_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_roughness_ = BGFX_INVALID_HANDLE;
     bgfx::UniformHandle u_metallic_ = BGFX_INVALID_HANDLE;
 };

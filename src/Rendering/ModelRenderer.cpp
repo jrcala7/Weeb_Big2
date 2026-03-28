@@ -79,6 +79,8 @@ bool ModelRenderer::Init() {
     u_outline_params_ = bgfx::createUniform("u_outline_params", bgfx::UniformType::Vec4);
     s_base_color_tex_ = bgfx::createUniform("s_base_color_tex", bgfx::UniformType::Sampler);
     u_has_texture_    = bgfx::createUniform("u_has_texture",    bgfx::UniformType::Vec4);
+    s_normal_map_tex_ = bgfx::createUniform("s_normal_map_tex", bgfx::UniformType::Sampler);
+    u_has_normal_map_ = bgfx::createUniform("u_has_normal_map", bgfx::UniformType::Vec4);
     u_roughness_      = bgfx::createUniform("u_roughness",      bgfx::UniformType::Vec4);
     u_metallic_       = bgfx::createUniform("u_metallic",       bgfx::UniformType::Vec4);
 
@@ -153,6 +155,14 @@ void ModelRenderer::Shutdown() {
     if (bgfx::isValid(u_has_texture_)) {
         bgfx::destroy(u_has_texture_);
         u_has_texture_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(s_normal_map_tex_)) {
+        bgfx::destroy(s_normal_map_tex_);
+        s_normal_map_tex_ = BGFX_INVALID_HANDLE;
+    }
+    if (bgfx::isValid(u_has_normal_map_)) {
+        bgfx::destroy(u_has_normal_map_);
+        u_has_normal_map_ = BGFX_INVALID_HANDLE;
     }
     if (bgfx::isValid(u_roughness_)) {
         bgfx::destroy(u_roughness_);
@@ -299,6 +309,14 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
             has_texture_arr[0] = 1.0f;
         }
         bgfx::setUniform(u_has_texture_, has_texture_arr);
+
+        // Bind the normal map texture if the mesh has one loaded.
+        float has_normal_map_arr[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+        if (mesh.normal_map_texture.IsLoaded()) {
+            bgfx::setTexture(1, s_normal_map_tex_, mesh.normal_map_texture.GetHandle());
+            has_normal_map_arr[0] = 1.0f;
+        }
+        bgfx::setUniform(u_has_normal_map_, has_normal_map_arr);
 
         bgfx::setState(
             BGFX_STATE_WRITE_RGB
