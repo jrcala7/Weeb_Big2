@@ -1,5 +1,7 @@
 # Weeb_Big2
 
+![Showcase](assets/showcase.png)
+
 A 3D model viewer built with [big2-stack](https://github.com/Paper-Cranes-Ltd/big2-stack) (bgfx + GLFW + ImGui) and Assimp.
 It showcases both a standard PBR render and an Anime style render on the loaded model.
 
