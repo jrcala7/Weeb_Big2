@@ -19,6 +19,7 @@
 #include "UI/CameraDebugUI.h"
 #include "UI/LightDebugUI.h"
 #include "UI/ModelDebugUI.h"
+#include "UI/RenderStatsOverlay.h"
 
 /// Load and configure the test bunny model.
 /// @param[out] model  The Model3D instance to populate.
@@ -110,8 +111,12 @@ int main(std::int32_t, gsl::zstring[]) {
 
 	ModelRenderer renderer;
 	CameraController camera_controller;
+	RenderStatsOverlay render_stats;
+	render_stats.UpdateModelStats(model);
 
 	window.SetRenderCallback([&](big2::Window& win, float dt) {
+		render_stats.BeginFrame();
+
 		// Lazy-init: ModelRenderer needs bgfx to be up, which happens inside Run().
 		if (!renderer.IsInitialized()) {
 			renderer.Init();
@@ -127,8 +132,11 @@ int main(std::int32_t, gsl::zstring[]) {
 		bgfx::touch(win.GetView());
 		renderer.Render(win.GetView(), model, camera, light_manager);
 
+		render_stats.EndFrame(dt);
+
 #if BIG2_IMGUI_ENABLED
 		BIG2_SCOPE_VAR(big2::ImGuiFrameScoped) {
+			DrawRenderStatsOverlay(render_stats);
 			DrawCameraDebugUI(camera);
 			DrawLightManagerDebugUI(light_manager);
 			DrawModelDebugUI(model);

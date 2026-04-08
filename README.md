@@ -1,4 +1,4 @@
-# Weeb_Big2
+# BGFX PBR-Anime Shader Showcase
 
 ![Showcase](assets/showcase.png)
 
