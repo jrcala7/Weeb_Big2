@@ -47,6 +47,7 @@ static bool LoadDjSword(Model3D& model) {
 	}
 	model.SetScale({ 0.02f, 0.02f, 0.02f });
 	model.SetPosition({0.0f, 0.7f, 0.0f});
+	model.SetBlurRadius(10);
 	return true;
 }
 
@@ -58,6 +59,7 @@ static bool LoadSponza(Model3D& model) {
 		return false;
 	}
 	model.SetScale({1.0f, 1.0f, 1.0f});
+	model.SetBlurRadius(20);
 	return true;
 }
 

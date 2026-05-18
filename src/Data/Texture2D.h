@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 #include <bgfx/bgfx.h>
 
 /// @brief Holds a 2D texture loaded from an image file.
@@ -24,6 +25,12 @@ public:
 
     /// Release all resources (CPU + GPU).
     void Unload();
+
+    /// Apply a Gaussian blur filter to this texture and return a new blurred texture.
+    /// The blur is performed on CPU using a Gaussian kernel.
+    /// @param radius  Blur radius in pixels (higher = more blur). Typical range: 1-10.
+    /// @return A new Texture2D with the blurred result. IsLoaded() will be false if blur fails.
+    [[nodiscard]] Texture2D ApplyGaussianBlur(int radius) const;
 
     /// @return true if the texture was loaded successfully.
     [[nodiscard]] bool IsLoaded() const { return bgfx::isValid(handle_); }
@@ -51,4 +58,5 @@ private:
     std::uint32_t height_   = 0;
     std::uint32_t channels_ = 0;
     std::string error_;
+    std::vector<uint8_t> pixels_;
 };

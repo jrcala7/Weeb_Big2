@@ -85,6 +85,8 @@ bool ModelRenderer::Init() {
     u_metallic_       = bgfx::createUniform("u_metallic",       bgfx::UniformType::Vec4);
     u_shadow_factor_  = bgfx::createUniform("u_shadow_factor",  bgfx::UniformType::Vec4);
     u_use_pbr_        = bgfx::createUniform("u_use_pbr",        bgfx::UniformType::Vec4);
+    s_blurred_color_tex_ = bgfx::createUniform("s_blurred_color_tex", bgfx::UniformType::Sampler);
+    u_use_blurred_texture_ = bgfx::createUniform("u_use_blurred_texture", bgfx::UniformType::Vec4);
 
     return true;
 }
@@ -181,6 +183,14 @@ void ModelRenderer::Shutdown() {
         if (bgfx::isValid(u_use_pbr_)) {
             bgfx::destroy(u_use_pbr_);
             u_use_pbr_ = BGFX_INVALID_HANDLE;
+        }
+        if (bgfx::isValid(s_blurred_color_tex_)) {
+            bgfx::destroy(s_blurred_color_tex_);
+            s_blurred_color_tex_ = BGFX_INVALID_HANDLE;
+        }
+        if (bgfx::isValid(u_use_blurred_texture_)) {
+            bgfx::destroy(u_use_blurred_texture_);
+            u_use_blurred_texture_ = BGFX_INVALID_HANDLE;
         }
     }
 
@@ -308,6 +318,9 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
     float use_pbr_arr[4] = {model.GetUsePBR() ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f};
     bgfx::setUniform(u_use_pbr_, use_pbr_arr);
 
+    float use_blurred_texture_arr[4] = {model.GetUseBlurredTexture() ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f};
+    bgfx::setUniform(u_use_blurred_texture_, use_blurred_texture_arr);
+
     // ---- Submit each sub-mesh -----------------------------------------------
     for (const auto& mesh : model.GetMeshes()) {
         if (!bgfx::isValid(mesh.vbh) || !bgfx::isValid(mesh.ibh)) {
@@ -326,13 +339,18 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
         }
         bgfx::setUniform(u_has_texture_, has_texture_arr);
 
-        // Bind the normal map texture if the mesh has one loaded.
+         // Bind the normal map texture if the mesh has one loaded.
         float has_normal_map_arr[4] = {0.0f, 0.0f, 0.0f, 0.0f};
         if (mesh.normal_map_texture.IsLoaded()) {
             bgfx::setTexture(1, s_normal_map_tex_, mesh.normal_map_texture.GetHandle());
             has_normal_map_arr[0] = 1.0f;
         }
         bgfx::setUniform(u_has_normal_map_, has_normal_map_arr);
+
+        // Bind the blurred color texture if the mesh has one loaded.
+        if (mesh.blurred_color_texture.IsLoaded()) {
+            bgfx::setTexture(2, s_blurred_color_tex_, mesh.blurred_color_texture.GetHandle());
+        }
 
         bgfx::setState(
             BGFX_STATE_WRITE_RGB

@@ -35,6 +35,7 @@ public:
         std::vector<uint32_t> indices;
         Texture2D             base_color_texture;
         Texture2D             normal_map_texture;
+        Texture2D             blurred_color_texture;
         bgfx::VertexBufferHandle vbh = BGFX_INVALID_HANDLE;
         bgfx::IndexBufferHandle  ibh = BGFX_INVALID_HANDLE;
     };
@@ -111,6 +112,12 @@ public:
     [[nodiscard]] bool GetUsePBR() const { return use_pbr_; }
     void SetUsePBR(bool use) { use_pbr_ = use; }
 
+    [[nodiscard]] bool GetUseBlurredTexture() const { return use_blurred_texture_; }
+    void SetUseBlurredTexture(bool use) { use_blurred_texture_ = use; }
+
+    [[nodiscard]] int GetBlurRadius() const { return blur_radius_; }
+    void SetBlurRadius(int radius) { blur_radius_ = std::max(0, radius); }
+
     // -- Mesh data accessors --------------------------------------------------
 
     [[nodiscard]] const std::vector<Mesh>& GetMeshes() const { return meshes_; }
@@ -153,4 +160,6 @@ private:
         float metallic_ = 0.0f;
         float shadow_factor_ = 0.5f;
         bool use_pbr_ = true;
+        bool use_blurred_texture_ = false;
+        int blur_radius_ = 3;
     };

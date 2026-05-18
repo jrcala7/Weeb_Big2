@@ -46,6 +46,13 @@ bool Model3D::Load(const std::string& path) {
 
     ProcessNode(scene->mRootNode, scene);
 
+    // Create blurred versions of base color textures
+    for (auto& mesh : meshes_) {
+        if (mesh.base_color_texture.IsLoaded() && blur_radius_ > 0) {
+            mesh.blurred_color_texture = mesh.base_color_texture.ApplyGaussianBlur(blur_radius_);
+        }
+    }
+
     // Create persistent GPU vertex/index buffers for each loaded mesh.
     bgfx::VertexLayout layout = GetVertexLayout();
     for (auto& mesh : meshes_) {
@@ -242,6 +249,11 @@ bool Model3D::ReplaceAllTextures(const std::string& path) {
         } else {
             meshes_[i].base_color_texture.Unload();
             meshes_[i].base_color_texture.Load(path);
+        }
+
+        // Create a blurred version of the replacement texture
+        if (meshes_[i].base_color_texture.IsLoaded() && blur_radius_ > 0) {
+            meshes_[i].blurred_color_texture = meshes_[i].base_color_texture.ApplyGaussianBlur(blur_radius_);
         }
     }
 

@@ -51,6 +51,16 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetUsePBR(use_pbr);
         }
 
+        bool use_blurred_texture = model.GetUseBlurredTexture();
+        if (ImGui::Checkbox("Use Blurred Texture", &use_blurred_texture)) {
+            model.SetUseBlurredTexture(use_blurred_texture);
+        }
+
+        int blur_radius = model.GetBlurRadius();
+        if (ImGui::SliderInt("Blur Radius", &blur_radius, 0, 20)) {
+            model.SetBlurRadius(blur_radius);
+        }
+
         float roughness = model.GetRoughness();
         if (ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f)) {
             model.SetRoughness(roughness);

@@ -66,4 +66,6 @@ private:
         bgfx::UniformHandle u_metallic_ = BGFX_INVALID_HANDLE;
         bgfx::UniformHandle u_shadow_factor_ = BGFX_INVALID_HANDLE;
         bgfx::UniformHandle u_use_pbr_ = BGFX_INVALID_HANDLE;
+        bgfx::UniformHandle s_blurred_color_tex_ = BGFX_INVALID_HANDLE;
+        bgfx::UniformHandle u_use_blurred_texture_ = BGFX_INVALID_HANDLE;
     };
