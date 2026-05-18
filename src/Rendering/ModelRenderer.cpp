@@ -81,9 +81,10 @@ bool ModelRenderer::Init() {
     u_has_texture_    = bgfx::createUniform("u_has_texture",    bgfx::UniformType::Vec4);
     s_normal_map_tex_ = bgfx::createUniform("s_normal_map_tex", bgfx::UniformType::Sampler);
     u_has_normal_map_ = bgfx::createUniform("u_has_normal_map", bgfx::UniformType::Vec4);
-    u_roughness_      = bgfx::createUniform("u_roughness",      bgfx::UniformType::Vec4);
+     u_roughness_      = bgfx::createUniform("u_roughness",      bgfx::UniformType::Vec4);
     u_metallic_       = bgfx::createUniform("u_metallic",       bgfx::UniformType::Vec4);
     u_shadow_factor_  = bgfx::createUniform("u_shadow_factor",  bgfx::UniformType::Vec4);
+    u_use_pbr_        = bgfx::createUniform("u_use_pbr",        bgfx::UniformType::Vec4);
 
     return true;
 }
@@ -173,11 +174,15 @@ void ModelRenderer::Shutdown() {
         bgfx::destroy(u_metallic_);
         u_metallic_ = BGFX_INVALID_HANDLE;
     }
-    if (bgfx::isValid(u_shadow_factor_)) {
-        bgfx::destroy(u_shadow_factor_);
-        u_shadow_factor_ = BGFX_INVALID_HANDLE;
+         if (bgfx::isValid(u_shadow_factor_)) {
+            bgfx::destroy(u_shadow_factor_);
+            u_shadow_factor_ = BGFX_INVALID_HANDLE;
+        }
+        if (bgfx::isValid(u_use_pbr_)) {
+            bgfx::destroy(u_use_pbr_);
+            u_use_pbr_ = BGFX_INVALID_HANDLE;
+        }
     }
-}
 
 bool ModelRenderer::IsInitialized() const {
     return bgfx::isValid(model_program_) && bgfx::isValid(weeb_program_) && bgfx::isValid(outline_program_);
@@ -297,8 +302,11 @@ void ModelRenderer::Render(bgfx::ViewId view_id,
     float metallic_arr[4] = {model.GetMetallic(), 0.0f, 0.0f, 0.0f};
     bgfx::setUniform(u_metallic_, metallic_arr);
 
-    float shadow_factor_arr[4] = {model.GetShadowFactor(), 0.0f, 0.0f, 0.0f};
+     float shadow_factor_arr[4] = {model.GetShadowFactor(), 0.0f, 0.0f, 0.0f};
     bgfx::setUniform(u_shadow_factor_, shadow_factor_arr);
+
+    float use_pbr_arr[4] = {model.GetUsePBR() ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f};
+    bgfx::setUniform(u_use_pbr_, use_pbr_arr);
 
     // ---- Submit each sub-mesh -----------------------------------------------
     for (const auto& mesh : model.GetMeshes()) {

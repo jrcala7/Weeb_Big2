@@ -19,6 +19,7 @@ uniform vec4 u_has_normal_map;   // x > 0.0 means a normal map texture is bound
 uniform vec4 u_roughness;        // x = roughness [0..1]
 uniform vec4 u_metallic;         // x = metallic [0..1]
 uniform vec4 u_shadow_factor;    // x = shadow_factor [0..1]
+uniform vec4 u_use_pbr;          // x > 0.0 means use PBR shading, otherwise use flat shading
 
 // PBR constants
 const float PI = 3.14159265359;
@@ -141,13 +142,6 @@ void main()
 
     vec3 viewDir = normalize(u_view_dir.xyz);
 
-    // Calculate combined PBR lighting from all active lights
-    vec3 pbr_color = vec3(0.0, 0.0, 0.0);
-    int num_lights = int(u_num_lights.x);
-
-    // Clamp to 4 lights max
-    if (num_lights > 4) num_lights = 4;
-
     // Sample the base color texture if available and modulate the colors.
     vec4 tex_color = vec4(1.0, 1.0, 1.0, 1.0);
     if (u_has_texture.x > 0.0)
@@ -155,37 +149,66 @@ void main()
         tex_color = texture2D(s_base_color_tex, v_texcoord0);
     }
 
-    
-    float roughness = u_roughness.x;
-    float metallic = u_metallic.x;
-
-    for (int i = 0; i < num_lights && i < 4; ++i) {
-        vec3 dir = u_light_dirs[i].xyz;
-        vec3 lightDir = normalize(dir * -1.0);
-        vec3 lightColor = u_light_colors[i].rgb;
-        float intensity = u_light_intensities[i].x;
-
-        float ndotl = max(dot(v_normal, lightDir), 0.0);
-        ndotl = stepCheck(ndotl, u_step.x);
-
-        vec3 baseColor = mix(u_shadow_color.rgb * (tex_color.rgb * (1.0 - u_shadow_factor.x)), u_base_color.rgb * tex_color.rgb, ndotl);
-
-            pbr_color += calculatePBR(v_world_pos, normal, viewDir, lightDir, baseColor, roughness, metallic, lightColor, intensity);
-    }
-
     float vdotl = max(dot(v_normal, -u_view_dir.xyz), 0.0);
     float alpha = u_base_color.a * tex_color.a;
 
     float inner_s = u_step.y;
     float curve_s = u_step.z;
-    //If near edge and within inner step, use inner edge color
-    //If curvature is above curve step, use edge color
+
+    // Check for edge coloring first
     if(inner_s > vdotl || curve_s < v_curvature)
     {
         gl_FragColor = vec4(u_inner_edge_color.rgb, alpha);
     }
+    else if (u_use_pbr.x > 0.0)
+    {
+        // Use PBR shading
+        vec3 pbr_color = vec3(0.0, 0.0, 0.0);
+        int num_lights = int(u_num_lights.x);
+
+        // Clamp to 4 lights max
+        if (num_lights > 4) num_lights = 4;
+
+        float roughness = u_roughness.x;
+        float metallic = u_metallic.x;
+
+        for (int i = 0; i < num_lights && i < 4; ++i) {
+            vec3 dir = u_light_dirs[i].xyz;
+            vec3 lightDir = normalize(dir * -1.0);
+            vec3 lightColor = u_light_colors[i].rgb;
+            float intensity = u_light_intensities[i].x;
+
+            float ndotl = max(dot(v_normal, lightDir), 0.0);
+            ndotl = stepCheck(ndotl, u_step.x);
+
+            vec3 baseColor = mix(u_shadow_color.rgb * (tex_color.rgb * (1.0 - u_shadow_factor.x)), u_base_color.rgb * tex_color.rgb, ndotl);
+
+            pbr_color += calculatePBR(v_world_pos, normal, viewDir, lightDir, baseColor, roughness, metallic, lightColor, intensity);
+        }
+
+        gl_FragColor = vec4(pbr_color, alpha);
+    }
     else
     {
-        gl_FragColor = vec4(pbr_color, alpha);
+        // Use flat shading (simple diffuse without PBR)
+        vec3 flat_color = vec3(0.0, 0.0, 0.0);
+        int num_lights = int(u_num_lights.x);
+
+        if (num_lights > 4) num_lights = 4;
+
+        for (int i = 0; i < num_lights && i < 4; ++i) {
+            vec3 dir = u_light_dirs[i].xyz;
+            vec3 lightDir = normalize(dir * -1.0);
+            vec3 lightColor = u_light_colors[i].rgb;
+            float intensity = u_light_intensities[i].x;
+
+            float ndotl = max(dot(v_normal, lightDir), 0.0);
+            ndotl = stepCheck(ndotl, u_step.x);
+
+            vec3 baseColor = mix(u_shadow_color.rgb * (tex_color.rgb * (1.0 - u_shadow_factor.x)), u_base_color.rgb * tex_color.rgb, ndotl);
+            flat_color += baseColor * lightColor * intensity * ndotl;
+        }
+
+        gl_FragColor = vec4(flat_color, alpha);
     }
 }

@@ -43,8 +43,13 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetShaderType(static_cast<ShaderType>(current));
         }
 
-        ImGui::Separator();
+         ImGui::Separator();
         ImGui::Text("PBR Properties");
+
+        bool use_pbr = model.GetUsePBR();
+        if (ImGui::Checkbox("Use PBR", &use_pbr)) {
+            model.SetUsePBR(use_pbr);
+        }
 
         float roughness = model.GetRoughness();
         if (ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f)) {
