@@ -5,6 +5,7 @@ $input v_normal, v_texcoord0, v_world_pos, v_curvature, v_smooth_normal, v_tange
 SAMPLER2D(s_base_color_tex, 0);
 SAMPLER2D(s_normal_map_tex, 1);
 SAMPLER2D(s_blurred_color_tex, 2);
+SAMPLER2D(s_blurred_normal_map_tex, 3);
 
 uniform vec4 u_light_dirs[4];    // xyz = direction (normalized), w = unused
 uniform vec4 u_light_colors[4];  // rgb = light color, a = unused
@@ -22,6 +23,7 @@ uniform vec4 u_metallic;         // x = metallic [0..1]
 uniform vec4 u_shadow_factor;    // x = shadow_factor [0..1]
 uniform vec4 u_use_pbr;          // x > 0.0 means use PBR shading, otherwise use flat shading
 uniform vec4 u_use_blurred_texture; // x > 0.0 means use blurred texture instead of base color
+uniform vec4 u_use_blurred_normal_texture; // x > 0.0 means use blurred normal map instead of original
 
 // PBR constants
 const float PI = 3.14159265359;
@@ -114,7 +116,15 @@ vec3 sampleNormalMap(vec3 normal, vec3 tangent, vec3 bitangent, vec2 texCoord)
     }
 
     // Sample the normal map (assuming it's stored in RGB format)
-    vec3 sampledNormal = texture2D(s_normal_map_tex, texCoord).rgb;
+    vec3 sampledNormal;
+    if (u_use_blurred_normal_texture.x > 0.0)
+    {
+        sampledNormal = texture2D(s_blurred_normal_map_tex, texCoord).rgb;
+    }
+    else
+    {
+        sampledNormal = texture2D(s_normal_map_tex, texCoord).rgb;
+    }
 
     // Convert from [0, 1] to [-1, 1]
     sampledNormal = sampledNormal * 2.0 - 1.0;
@@ -211,7 +221,7 @@ void main()
             vec3 lightColor = u_light_colors[i].rgb;
             float intensity = u_light_intensities[i].x;
 
-            float ndotl = max(dot(v_normal, lightDir), 0.0);
+            float ndotl = max(dot(normal, lightDir), 0.0);
             ndotl = stepCheck(ndotl, u_step.x);
 
             vec3 baseColor = mix(u_shadow_color.rgb * (tex_color.rgb * (1.0 - u_shadow_factor.x)), u_base_color.rgb * tex_color.rgb, ndotl);

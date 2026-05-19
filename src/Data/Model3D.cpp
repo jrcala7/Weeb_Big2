@@ -46,10 +46,13 @@ bool Model3D::Load(const std::string& path) {
 
     ProcessNode(scene->mRootNode, scene);
 
-    // Create blurred versions of base color textures
+    // Create blurred versions of base color textures and normal map textures
     for (auto& mesh : meshes_) {
         if (mesh.base_color_texture.IsLoaded() && blur_radius_ > 0) {
             mesh.blurred_color_texture = mesh.base_color_texture.ApplyGaussianBlur(blur_radius_);
+        }
+        if (mesh.normal_map_texture.IsLoaded() && blur_radius_ > 0) {
+            mesh.blurred_normal_map_texture = mesh.normal_map_texture.ApplyGaussianBlur(blur_radius_);
         }
     }
 
@@ -254,6 +257,9 @@ bool Model3D::ReplaceAllTextures(const std::string& path) {
         // Create a blurred version of the replacement texture
         if (meshes_[i].base_color_texture.IsLoaded() && blur_radius_ > 0) {
             meshes_[i].blurred_color_texture = meshes_[i].base_color_texture.ApplyGaussianBlur(blur_radius_);
+        }
+        if (meshes_[i].normal_map_texture.IsLoaded() && blur_radius_ > 0) {
+            meshes_[i].blurred_normal_map_texture = meshes_[i].normal_map_texture.ApplyGaussianBlur(blur_radius_);
         }
     }
 

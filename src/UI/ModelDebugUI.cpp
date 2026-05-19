@@ -56,6 +56,11 @@ void DrawModelDebugUI(Model3D& model) {
             model.SetUseBlurredTexture(use_blurred_texture);
         }
 
+        bool use_blurred_normal_texture = model.GetUseBlurredNormalTexture();
+        if (ImGui::Checkbox("Use Blurred Normal Texture", &use_blurred_normal_texture)) {
+            model.SetUseBlurredNormalTexture(use_blurred_normal_texture);
+        }
+
         int blur_radius = model.GetBlurRadius();
         if (ImGui::SliderInt("Blur Radius", &blur_radius, 0, 20)) {
             model.SetBlurRadius(blur_radius);

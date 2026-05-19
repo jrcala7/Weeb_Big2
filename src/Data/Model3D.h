@@ -36,6 +36,7 @@ public:
         Texture2D             base_color_texture;
         Texture2D             normal_map_texture;
         Texture2D             blurred_color_texture;
+        Texture2D             blurred_normal_map_texture;
         bgfx::VertexBufferHandle vbh = BGFX_INVALID_HANDLE;
         bgfx::IndexBufferHandle  ibh = BGFX_INVALID_HANDLE;
     };
@@ -118,6 +119,9 @@ public:
     [[nodiscard]] int GetBlurRadius() const { return blur_radius_; }
     void SetBlurRadius(int radius) { blur_radius_ = std::max(0, radius); }
 
+    [[nodiscard]] bool GetUseBlurredNormalTexture() const { return use_blurred_normal_texture_; }
+    void SetUseBlurredNormalTexture(bool use) { use_blurred_normal_texture_ = use; }
+
     // -- Mesh data accessors --------------------------------------------------
 
     [[nodiscard]] const std::vector<Mesh>& GetMeshes() const { return meshes_; }
@@ -157,9 +161,10 @@ private:
     glm::vec4 outline_color_{0.0f, 0.0f, 0.0f, 1.0f};
     float outline_thickness_ = 0.02f;
          float roughness_ = 0.5f;
-        float metallic_ = 0.0f;
-        float shadow_factor_ = 0.5f;
-        bool use_pbr_ = true;
-        bool use_blurred_texture_ = false;
-        int blur_radius_ = 3;
+         float metallic_ = 0.0f;
+         float shadow_factor_ = 0.5f;
+         bool use_pbr_ = true;
+         bool use_blurred_texture_ = false;
+         bool use_blurred_normal_texture_ = false;
+         int blur_radius_ = 3;
     };
