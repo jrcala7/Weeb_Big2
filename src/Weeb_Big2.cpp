@@ -116,6 +116,10 @@ int main(std::int32_t, gsl::zstring[]) {
 	RenderStatsOverlay render_stats;
 	render_stats.UpdateModelStats(model);
 
+	// UI visibility toggle state
+	bool ui_visible = true;
+	bool tab_pressed_last_frame = false;
+
 	window.SetRenderCallback([&](big2::Window& win, float dt) {
 		render_stats.BeginFrame();
 
@@ -126,6 +130,13 @@ int main(std::int32_t, gsl::zstring[]) {
 
 		// Update camera with keyboard input
 		camera_controller.Update(camera, win, dt);
+
+		// Tab key toggle for UI visibility
+		bool tab_pressed = ImGui::IsKeyPressed(ImGuiKey_Tab);
+		if (tab_pressed && !tab_pressed_last_frame) {
+			ui_visible = !ui_visible;
+		}
+		tab_pressed_last_frame = tab_pressed;
 
 		// Clear both color and depth each frame so the depth test works.
 		bgfx::setViewClear(win.GetView(),
@@ -138,10 +149,12 @@ int main(std::int32_t, gsl::zstring[]) {
 
 #if BIG2_IMGUI_ENABLED
 		BIG2_SCOPE_VAR(big2::ImGuiFrameScoped) {
-			DrawRenderStatsOverlay(render_stats);
-			DrawCameraDebugUI(camera);
-			DrawLightManagerDebugUI(light_manager);
-			DrawModelDebugUI(model);
+			if (ui_visible) {
+				DrawRenderStatsOverlay(render_stats);
+				DrawCameraDebugUI(camera);
+				DrawLightManagerDebugUI(light_manager);
+				DrawModelDebugUI(model);
+			}
 		}
 #endif
 	});
